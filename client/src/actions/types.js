@@ -1,0 +1,2 @@
+export const USER_ONLINE = 'USER_ONLINE';
+export const ACTIVE_CHANNEL = 'ACTIVE_CHANNEL';
