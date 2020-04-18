@@ -1,0 +1,421 @@
+body {
+    background-color:#363062;
+}
+
+.modal-backdrop.show{
+    opacity: 0.8;
+}
+
+/********** Landing page **********/
+.landing-wrapper {
+    border: 1px solid #FAFAFA;
+    margin: 0 auto;
+    width: 80%;
+    max-width: 30rem;
+    text-align: center;
+    background-color: #FAFAFA;
+    border-radius: 0.5rem;
+    padding: 2rem;
+    /* Center form */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    -ms-transform: translate(-50%, -50%); /* IE 9 */
+    -webkit-transform: translate(-50%, -50%); /* Chrome, Safari, Opera */
+}
+
+.logo {
+    padding-bottom: 0.3rem;
+    font-size: 3rem !important;
+}
+
+.app-name {
+    font-weight: bold;
+}
+
+.landing-subtitle {
+    margin-bottom: 1rem;
+}
+
+.landing-form .input-group {
+    border-radius: 1rem;
+    box-shadow: none;
+    max-width: 20rem;
+    margin: 1rem auto 0 auto;
+}
+
+.landing-form .input-group-text {
+    border-right: none;
+    background-color: #FFF;
+    border-radius: 1rem
+}
+
+.landing-form .form-control {
+    box-shadow: none;
+    border-left: none;
+    border-radius: 1rem;
+}
+
+.landing-form .form-control:focus {
+    border-color: #CED4DA;
+}
+
+.landing-wrapper .btn-success, .register-form .btn-success {
+    border-radius: 1rem;
+    width: 8rem;
+    margin: 1rem auto;
+}
+
+.register-or-login-text {
+    font-size: 0.8rem;
+}
+
+.register-or-login-link {
+    background: none!important;
+    border: none;
+    padding: 0!important;
+    color: #007bff;
+    cursor: pointer;
+}
+
+.register-or-login-link:focus {
+    outline: none;
+}
+
+.register-or-login-link:hover {
+    color: #069;
+    text-decoration: underline;
+}
+
+.register-form {
+    position: relative;
+}
+
+.register-form .modal-header {
+    padding-bottom: 1rem;
+    border-bottom: 0;
+}
+
+.register-form .modal-content {
+    border-radius: 1rem;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+.register-form .modal-header {
+    margin: 0 auto;
+}
+
+.register-form .modal-footer {
+    border-top: none;
+    justify-content: center;
+}
+
+.register-form .close {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+}
+
+.register-form .close:focus {
+    outline: none;
+}
+
+/********** Home page **********/
+.main {
+    height: 100vh;
+    background-color: #F0F0F0;
+}
+
+/********** Home page: Side bar **********/
+.sidebar-wrapper {
+    height: 100vh;
+    background-color: #563c5c;
+    width: 18rem;
+    padding: 1.5rem;
+    color: #FFF;
+    position: absolute;
+    z-index: 2;
+}
+
+.sidebar-section {
+    padding: 0 1rem;
+    color: #C0C0C0;
+    margin-bottom: 2rem;
+}
+
+.sidebar-title {
+    padding-right: 1rem;
+    text-align: center;
+}
+
+.icon {
+    padding-bottom: 0.3rem;
+    font-size: 1.8rem !important;
+    margin-right: 0.2rem;
+}
+
+.add-icon {
+    float: right;
+    cursor: pointer;
+}
+
+.add-icon:hover {
+    color: #FFF;
+}
+
+.sidebar-link-wrapper {
+    padding-left: 2rem;
+}
+
+.sidebar-link {
+    background: none!important;
+    border: none;
+    padding: 0!important;
+    cursor: pointer;
+    color: #C0C0C0;
+    font-weight: 500;
+}
+
+.sidebar-link:focus {
+    outline: none;
+}
+
+.sidebar-link:hover {
+    color: #FFF;
+}
+
+/********** Home page: Add Channel form **********/
+.add-channel-wrapper .modal-header {
+    border-bottom: none;
+}
+
+.add-channel-wrapper .modal-title {
+    color: #FFF;
+    text-shadow: 0.1rem 0.1rem #808080;
+}
+
+.add-channel-wrapper .modal-content {
+    background-color: rgb(0, 0, 0, 0);
+    border: none;
+}
+
+.add-channel-wrapper .close:focus {
+    outline: none;
+}
+
+.add-channel-wrapper .close {
+    color: #FFF;
+}
+
+.add-channel-wrapper .close:hover {
+    text-shadow: 0.5rem 0.5rem 0.8rem #E8E8E8;
+}
+
+.add-channel-wrapper .input-group {
+    border-radius: 1rem;
+    box-shadow: none;
+    margin: 1rem auto 0 auto;
+}
+
+.add-channel-wrapper .input-group-text {
+    border-right: none;
+    background-color: #FFF;
+    border-radius: 1rem
+}
+
+.add-channel-wrapper .form-control {
+    box-shadow: none;
+    border-left: none;
+    border-radius: 1rem;
+}
+
+.add-channel-wrapper .form-control:focus {
+    border-color: #CED4DA;
+}
+
+.add-channel-wrapper .modal-footer {
+    border-top: none;
+}
+
+.add-channel-wrapper .cancel-btn {
+    margin-left: 1.5rem;
+}
+
+.alert-message-wrapper .alert{
+    position: absolute;
+    width: 18rem;
+    top: 0.5rem;
+    left: 50%;
+    margin-left: -7.5rem;
+    text-align: center;
+    z-index: 100;
+}
+
+.alert-dismissible .close:focus {
+    outline: none;
+}
+
+/********** Home page: Header **********/
+.header-wrapper {
+    width: 100%;
+    padding-left: 18rem;
+    position: fixed;
+    background-color: #FFF;
+    height: 4rem;
+    box-shadow: 0.5rem 0.5rem 0.8rem #E8E8E8;
+    z-index: 1;
+}
+
+.header-wrapper .input-group {
+    border-radius: 1rem;
+    box-shadow: none;
+    margin: 0 auto;
+    width: 20rem;
+    margin-top: 0.75rem;
+}
+
+.header-wrapper .input-group-text {
+    border-right: none;
+    background-color: #FFF;
+    border-radius: 1rem
+}
+
+.header-wrapper .form-control {
+    box-shadow: none;
+    border-left: none;
+    border-radius: 1rem;
+}
+
+.header-wrapper .form-control:focus {
+    border-color: #CED4DA;
+}
+
+/********** Home page: Body **********/
+.body-wrapper {
+    background-color: #F0F0F0;
+    width: calc(100% - 18rem);
+    height: calc(100% - 4rem);
+    margin-top: 4rem;
+    position: absolute;
+    margin-left: 18rem;
+    z-index: 0;
+}
+
+/********** Home page: Body : ChatTitle **********/
+.chat-title-wrapper {
+    background-color: #FFF;
+    box-shadow: 0.5rem 0.5rem 0.8rem #E8E8E8;
+    margin: 1.5rem;
+    border-radius: 5px;
+    height: 4rem;
+}
+
+/********** Home page: Body : ChatBody **********/
+.chat-body-wrapper {
+    background-color: #FFF;
+    box-shadow: 0.5rem 0.5rem 0.8rem #E8E8E8;
+    margin: 1.5rem 1.5rem 1rem 1.5rem;
+    border-radius: 5px;
+    height: 26.5rem;
+}
+
+/********** Home page: Body : ChatInput **********/
+.chat-input-wrapper {
+    background-color: #FFF;
+    box-shadow: 0.5rem 0.5rem 0.8rem #E8E8E8;
+    margin: 0 1.5rem 1.5rem 1.5rem;
+    border-radius: 5px;
+    height: 3.5rem;
+    position: relative;
+}
+
+.chat-input-wrapper .input-group {
+    margin-top: 0.6rem;
+    border-radius: 1rem;
+    box-shadow: none;
+    float: right;
+    width: 30rem;
+    margin-right: 2rem;
+}
+
+.chat-input-wrapper .input-group-text {
+    border-right: none;
+    background-color: #FFF;
+    border-radius: 1rem
+}
+
+.chat-input-wrapper .form-control {
+    box-shadow: none;
+    border-left: none;
+    border-radius: 1rem;
+}
+
+.chat-input-wrapper .form-control:focus {
+    border-color: #CED4DA;
+}
+
+.insert-emoticon-icon {
+    position: absolute;
+    z-index: 100;
+    font-size: 2rem !important;
+    top: 0.8rem;
+    margin-left: 1.3rem;
+    color: #808080;
+    cursor: pointer;
+}
+
+.insert-emoticon-icon:hover {
+    color: green;
+}
+
+.picker-wrapper {
+    background-color: #FFF;
+    width: 36.5rem;
+    padding: 1rem;
+    position: absolute;
+    bottom: 6rem;
+    left: 2.5rem;
+    border-radius: 5px;
+}
+
+/********** Home page: Body : ChannelInfo **********/
+.channel-info-wrapper {
+    box-shadow: 0.5rem 0.5rem 0.8rem #E8E8E8;
+    margin: 1.5rem 1.5rem 1.5rem 0;
+    border-radius: 5px;
+}
+
+.channel-info-title-wrapper h4 {
+    margin: 0;
+    font-weight: 640;
+}
+
+.channel-info-title-wrapper p {
+    margin: 0;
+}
+
+.accordion .card {
+    background-color: #FFF;
+}
+
+.channel-info-toggle {
+    cursor: pointer;
+}
+
+/********** Home page: Body : EmptyState **********/
+.empty-state-wrapper {
+    background-color: #FFF;
+    border-radius: 0.5rem;
+    margin: 5.5rem 0rem 1.5rem 21rem;
+    width: calc(100% - 24rem);
+    height: calc(100% - 7rem);
+    position: absolute;
+    text-align: center;
+    color: #A9A9A9;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+}
+
