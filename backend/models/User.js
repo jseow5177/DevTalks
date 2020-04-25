@@ -6,10 +6,12 @@ const userSchema = new Schema({
     email: String,
     password: String,
     channels: [{
+        _id: false,
         channelId: String,
         channelName: String
     }],
     starred: [{
+        _id: false,
         channelId: String,
         channelName: String
     }]
