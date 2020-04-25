@@ -13,7 +13,7 @@ function FormRow({id, placeholder, type, icon, value, handleChange, error}) {
                         <InputGroup.Prepend>
                             <InputGroup.Text>{icon}</InputGroup.Text>
                         </InputGroup.Prepend>
-                        <Form.Control id={id} type={type} placeholder={placeholder} value={value} onChange={handleChange} autoComplete="off"/>
+                        <Form.Control id={id} type={type} placeholder={placeholder} value={value} onChange={handleChange} autoComplete="off" />
                     </InputGroup>
                 </Form.Group>
             </Form.Row>
