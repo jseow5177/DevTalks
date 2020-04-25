@@ -8,18 +8,27 @@ const channelSchema = new Schema({
         userId: String,
         username: String
     },
-    description: String,
+    channelDescription: String,
     members: [{
+        _id: false,
         userId: String,
         username: String
     }],
-    messages: [{
-        from: {
-            userId: String,
-            username: String
-        },
-        message: String
-    }]
+    messagesByDate: [{
+        _id: false,
+        date: String,
+        messages: [{
+            _id: false,
+            from: {
+                userId: String,
+                username: String
+            },
+            message: String,
+            time: Number
+        }]
+    }],
+    noOfMembers: Number,
+    stars: Number
 });
 
 const Channel = mongoose.model('channels', channelSchema);
