@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+//import axios from 'axios';
+import { connect } from 'react-redux';
 
 import AddChannel from './AddChannel';
 import SideBarLink from './SideBarLink';
@@ -10,25 +11,16 @@ import ForumIcon from '@material-ui/icons/Forum';
 import EmailIcon from '@material-ui/icons/Email';
 import AddRoundedIcon from '@material-ui/icons/AddRounded';
 
-function SideBar() {
+function SideBar({ socketInstance, auth, joinedChannels, starredChannels, setJoinedChannels, setStarredChannels }) {
 
     const [showAddChannel, setShowAddChannel] = useState(false);
-    const [joinedChannels, setJoinedChannels] = useState([]);
-    const [starredChannels, setStarredChannels] = useState([]);
 
-
-    // Get all channels of users
+    // Add user socket to the all his or her channels
     useEffect(() => {
-
-        axios.get('http://localhost:5000/dev-talks/channels/').then(res => {           
-            const channels = res.data;
-            setJoinedChannels(channels.joinedChannels);
-            setStarredChannels(channels.starredChannels);
-        }).catch(err => {
-            console.log(err.response.data);
-        });
-
-    }, []);
+        if (socketInstance.socket) {
+            socketInstance.socket.emit('joinChannel', joinedChannels);
+        }
+    }, [joinedChannels, socketInstance.socket]);
 
     // Show add channel form
     const addChannel = () => {
@@ -43,23 +35,28 @@ function SideBar() {
                 </div>
                 <div className="sidebar-section">
                     <h5><StarRoundedIcon className="icon" />Starred</h5>
-                    <SideBarLink starredChannels={starredChannels} />
+                    <SideBarLink channels={starredChannels} />
                 </div>
                 <div className="sidebar-section">
                     <h5><ForumIcon className="icon" />Channels<AddRoundedIcon className="icon add-icon" onClick={addChannel} /></h5>
-                    <SideBarLink starredChannels={joinedChannels} />
+                    <SideBarLink channels={joinedChannels} />
                 </div>
                 <div className="sidebar-section">
                     <h5><EmailIcon className="icon" />Direct Messages</h5>
                 </div>
             </div>
-            <AddChannel 
-                showAddChannel={showAddChannel} 
-                setShowAddChannel={setShowAddChannel} 
+            <AddChannel
+                showAddChannel={showAddChannel}
+                setShowAddChannel={setShowAddChannel}
                 setJoinedChannels={setJoinedChannels}
             />
         </div>
     )
 }
 
-export default SideBar;
+const mapStateToProps = state => ({
+    socketInstance: state.socket,
+    auth: state.auth,
+});
+
+export default connect(mapStateToProps, null)(SideBar);
