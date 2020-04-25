@@ -3,18 +3,7 @@ import setAuthToken from '../utils/setAuthToken';
 import jwt_decode from 'jwt-decode';
 
 import { GET_ERRORS, SET_CURRENT_USER } from './types';
-
-// Register user
-export const registerUser = (userData, history) => {
-    return (dispatch) => {
-        axios.post('http://localhost:5000/users/register', userData)
-             .then(res => history.push('/'))
-             .catch(err => dispatch({
-                 type: GET_ERRORS,
-                 payload: err.response.data
-             }));
-    };
-};
+import { getActiveChannel } from './channelActions';
 
 // Login user and set up token
 export const loginUser = userData => {
@@ -39,6 +28,18 @@ export const loginUser = userData => {
     };
 };
 
+// Register user
+export const registerUser = userData => {
+    return (dispatch) => {
+        axios.post('http://localhost:5000/users/register', userData)
+             .then(res => dispatch(loginUser(res.data)))
+             .catch(err => dispatch({
+                 type: GET_ERRORS,
+                 payload: err.response.data
+             }));
+    };
+};
+
 // Logout user
 export const logoutUser = () => {
     return (dispatch) => {
@@ -48,10 +49,11 @@ export const logoutUser = () => {
         setAuthToken(false);
         // Pass empty object to setCurrentUser. Will set isAuthenticated to false
         dispatch(setCurrentUser({}));
+        dispatch(getActiveChannel(null));
     }
 }
 
-const setCurrentUser = decoded => {
+export const setCurrentUser = decoded => {
     return {
         type: SET_CURRENT_USER,
         payload: decoded
