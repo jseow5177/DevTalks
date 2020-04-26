@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { connect } from 'react-redux';
 
 import AddChannel from './AddChannel';
-import SideBarLink from './SideBarLink';
+import SideBarSection from './SideBarSection';
 
 import CodeIcon from '@material-ui/icons/Code';
 import StarRoundedIcon from '@material-ui/icons/StarRounded';
@@ -35,11 +35,11 @@ function SideBar({ socketInstance, auth, joinedChannels, starredChannels, setJoi
                 </div>
                 <div className="sidebar-section">
                     <h5><StarRoundedIcon className="icon" />Starred</h5>
-                    <SideBarLink channels={starredChannels} />
+                    <SideBarSection channels={starredChannels} />
                 </div>
                 <div className="sidebar-section">
                     <h5><ForumIcon className="icon" />Channels<AddRoundedIcon className="icon add-icon" onClick={addChannel} /></h5>
-                    <SideBarLink channels={joinedChannels} />
+                    <SideBarSection channels={joinedChannels} />
                 </div>
                 <div className="sidebar-section">
                     <h5><EmailIcon className="icon" />Direct Messages</h5>
