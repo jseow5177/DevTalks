@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { connect } from 'react-redux';
 import axios from 'axios';
 
 import SearchIcon from '@material-ui/icons/Search';
+import ExitToAppIcon from '@material-ui/icons/ExitToApp';
 
 import Form from 'react-bootstrap/Form';
+import Tooltip from 'react-bootstrap/Tooltip';
+import OverlayTrigger from 'react-bootstrap/OverlayTrigger';
 
 import FormRow from '../auth/FormRow';
 import SearchResult from './SearchResult';
@@ -15,6 +18,7 @@ function Header({ logoutUser, removeActiveChannel }) {
 
     const [query, setQuery] = useState("");
     const [allChannels, setAllChannels] = useState([]);
+    const logoutBtn = useRef(null);
 
     // If clicked outside of search results, div will close
     window.addEventListener('click', e => {
@@ -74,8 +78,16 @@ function Header({ logoutUser, removeActiveChannel }) {
                         {filteredChannels.map((channel, index) => <SearchResult key={index} channel={channel} />)}
                     </div>)
             }
-
-            <button onClick={logOut}>Logout</button>
+            <OverlayTrigger
+                placement='left'
+                overlay={
+                    <Tooltip>
+                        Logout
+                    </Tooltip>
+                }
+            >
+                <button className='logout-btn' onClick={logOut}><ExitToAppIcon fontSize='large' /></button>
+            </OverlayTrigger>
         </div>
     )
 }
