@@ -1,3 +1,4 @@
+// Return date from a date object (new Date())
 const getDate = dateObject => {
     const day = (dateObject.getDate() < 10 ? '0' : '') + `${dateObject.getDate()}`;
     const month = ((dateObject.getMonth() + 1) < 10 ? '0' : '') + `${dateObject.getMonth() + 1}`;
