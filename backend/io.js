@@ -22,7 +22,12 @@ module.exports = (io) => {
         socket.on('newMember', data => {
             socket.join(data.channelId);
             io.to(data.channelId).emit('updateBody', data.channelId);
-            socket.broadcast.to(data.channelId).emit('message', data);
+            io.to(data.channelId).emit('message', data);
+        });
+
+        socket.on('userLeft', data => {
+            io.to(data.channelId).emit('updateBody', data.channelId);
+            io.to(data.channelId).emit('message', data);
         });
         
         // Show <username> is typing...
