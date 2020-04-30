@@ -90,7 +90,15 @@ const loginUser = async (req, res) => {
 
 }
 
-const findUser = async (userId) => {
+const findUser = async (req, res, byId) => {
+    let userId;
+
+    if (byId) { // If a GET request, access userId from req.params
+        userId = req.params.userId;
+    } else { // If a POST request, access userId from req.body
+        const userInfo = req.body.userData; // userId, username
+        userId = userInfo.userId;
+    }
 
     try {
         const foundUser = await User.findOne({ _id: userId });
@@ -103,5 +111,38 @@ const findUser = async (userId) => {
     }
 
 }
+
+// const findUserById = async (req, res) => {
+
+//     const userId = req.params.userId;
+
+//     try {
+//         const foundUser = await User.findOne({ _id: userId });
+
+//         if (!foundUser) {
+//             return res.status(404).json({ message: 'User not found' });
+//         }
+//         return foundUser;
+//     } catch (err) {
+//         return res.status(500).json({ message: err.message });
+//     }
+
+// }
+
+// const findUserByData = async (req, res) => {
+
+//     const userInfo = req.body.userData; // userId, username
+//     const userId = userInfo.userId;
+
+//     try {
+//         const foundUser = await User.findOne({ _id: userId });
+//         if (!foundUser) {
+//             return res.status(404).json({ message: 'User not found' });
+//         }
+//         return foundUser;
+//     } catch (err) {
+//         return res.status(500).json({ message: err.message });
+//     }
+// }
 
 module.exports = { registerUser, loginUser, findUser }

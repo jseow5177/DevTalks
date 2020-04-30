@@ -3,14 +3,14 @@ const { findUser } = require('./user');
 
 // Channel Model
 const Channel = require('../models/Channel');
+const User = require('../models/User');
 
 const getAllUserChannels = async (req, res) => {
 
-    const userId = req.params.userId;
+    // const userId = req.params.userId;
 
     try {
-
-        const foundUser = await findUser(userId);
+        const foundUser = await findUser(req, res, byId = true);
 
         const channels = {
             joinedChannels: foundUser.channels,
@@ -44,19 +44,18 @@ const addNewChannel = async (req, res) => {
 
     try {
         /* Find logged in user and add this channel to the user's list of channels */
-
-        const foundUser = await findUser(userInfo.userId);
+        const foundUser = await findUser(req, res, byId = false);
 
         const joinedChannels = foundUser.channels;
         joinedChannels.push({
             channelId: channelInfo.channelId,
             channelName: channelInfo.channelName
         });
-
-        await foundUser.save();
+        await foundUser.save(err => {
+            if (err) console.log(err);
+        });
 
         /* Add this new channel to the collection of channels */
-
         const newChannel = new Channel({
             ...channelInfo,
             messages: [], // No messages yet
@@ -65,10 +64,9 @@ const addNewChannel = async (req, res) => {
             noOfMembers: 1, // One new member
             stars: 0 // No stars
         })
-
-        const allChannels = await Channel.find();
-        allChannels.push(newChannel);
-        await newChannel.save();
+        await newChannel.save(err => {
+            if (err) console.log(err);
+        });
 
         /* Return the new channel list of user */
         return res.status(200).json(joinedChannels);
@@ -104,7 +102,9 @@ const addNewMessage = async (req, res) => {
     }
 
     try {
-        await foundChannel.save();
+        await foundChannel.save(err => {
+            if (err) console.log(err);
+        });
         return res.status(200).json({ message: 'Message sent' });
     } catch (err) {
         return res.status(500).json({ message: err.message });
@@ -140,23 +140,62 @@ const joinChannel = async (req, res) => {
         const channelMembers = foundChannel.members;
         foundChannel.noOfMembers++;
         channelMembers.push(userInfo);
-        await foundChannel.save();
+        await foundChannel.save(err => {
+            if (err) console.log(err);
+        });
 
         // Add channel to user's list of channels
         const channelData = {
             channelId: foundChannel.channelId,
             channelName: foundChannel.channelName
         }
-        const foundUser = await findUser(userInfo.userId);
+        const foundUser = await findUser(req, res, byId = false);
+
         const userChannels = foundUser.channels;
         userChannels.push(channelData);
-        await foundUser.save();
+        await foundUser.save(err => {
+            if (err) console.log(err);
+        });
 
         return res.status(200).json({ message: 'Successfully joined channel!' });
 
     } catch (err) {
         return res.status(500).json({ message: err.message })
     }
+
 }
 
-module.exports = { getAllUserChannels, getChannelInfo, addNewChannel, addNewMessage, getAllChannels, joinChannel }
+const leaveChannel = async (req, res) => {
+
+    const channelId = req.params.channelId;
+    const userId = req.params.userId;
+
+    try {
+
+        // Remove user from channel members
+        const foundChannel = await getChannelInfo(req, res);
+        const updatedNoOfMembers = foundChannel.noOfMembers - 1;
+        const updatedMembers = foundChannel.members.filter(member => member.userId !== userId);
+        await Channel.findOneAndUpdate({channelId: channelId}, {members: updatedMembers, noOfMembers: updatedNoOfMembers});
+        await foundChannel.save(err => {
+            if (err) console.log(err);
+        });
+
+        // Remove channel from user's list of channels
+        const foundUser = await findUser(req, res, byId = true);
+
+        const updatedChannels = foundUser.channels.filter(channel => channel.channelId !== channelId);
+        await User.findOneAndUpdate({_id: userId}, {channels: updatedChannels});
+        await foundUser.save(err => {
+            if (err) console.log(err);
+        });
+
+        return res.status(200).json({ message: 'Successfully left channel!' });
+
+    } catch (err) {
+        return res.status(500).json({ message: err.message })
+    }
+    
+}
+
+module.exports = { getAllUserChannels, getChannelInfo, addNewChannel, addNewMessage, getAllChannels, joinChannel, leaveChannel }
