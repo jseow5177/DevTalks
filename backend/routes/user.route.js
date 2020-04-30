@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-// Require register and login logic
-const { registerUser, loginUser } = require('../helper/user');
+const { registerUser, loginUser, findUser } = require('../helper/user');
 
 router.post('/login', async (req, res) => {
 
@@ -13,6 +12,15 @@ router.post('/login', async (req, res) => {
 router.post('/register', async (req, res) => {
 
     await registerUser(req, res);
+
+});
+
+// Get user info 
+router.get('/:userId', async (req, res) => {
+
+    const foundUser = await findUser(req, res, byId = true);
+
+    return res.status(200).json(foundUser);
 
 });
 
