@@ -7,7 +7,8 @@ const {
     addNewChannel, 
     addNewMessage, 
     getAllChannels, 
-    joinChannel 
+    joinChannel,
+    leaveChannel 
 } = require('../helper/channel.js');
 
 /* Get channels of a user and display them on the side bar */
@@ -52,6 +53,12 @@ router.route('/channels/').get(async (req, res) => {
 router.route('/channels/:channelId/users/add').put(async (req, res) => {
 
     await joinChannel(req, res);
+
+});
+
+router.route('/channels/:channelId/users/:userId/leave').delete(async (req, res) => {
+
+    await leaveChannel(req, res);
 
 });
 
