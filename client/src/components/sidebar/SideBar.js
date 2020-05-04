@@ -5,20 +5,21 @@ import OverlayTrigger from 'react-bootstrap/OverlayTrigger';
 import Tooltip from 'react-bootstrap/Tooltip';
 
 import AddChannel from './AddChannel';
+
 import SideBarSection from './SideBarSection';
 
 import CodeIcon from '@material-ui/icons/Code';
-import StarRoundedIcon from '@material-ui/icons/StarRounded';
-import ForumIcon from '@material-ui/icons/Forum';
-import EmailIcon from '@material-ui/icons/Email';
 import AddRoundedIcon from '@material-ui/icons/AddRounded';
 
-function SideBar({ socketInstance, joinedChannels, setJoinedChannels }) {
+function SideBar({ socketInstance, joinedChannels, setJoinedChannels, starredChannels, friends }) {
+
+    const [showJoinedChannelSection, setShowJoinedChannelSection] = useState(false);
+    const [showStarredChannelSection, setShowStarredChannelSection] = useState(false);
+    const [showFriendsSection, setShowFriendsSection] = useState(false);
 
     // When + sign is clicked, show AddChannel
     const [showAddChannel, setShowAddChannel] = useState(false);
-    const [showJoinedChannelSection, setShowJoinedChannelSection] = useState(false);
-    const [showStarredChannelSection, setShowStarredChannelSection] = useState(false);
+    
 
     // Add user socket to the all his or her channels
     useEffect(() => {
@@ -32,14 +33,6 @@ function SideBar({ socketInstance, joinedChannels, setJoinedChannels }) {
         setShowAddChannel(true);
     }
 
-    const toggleShowJoinedChannelSection = () => {
-        setShowJoinedChannelSection(!showJoinedChannelSection);
-    }
-
-    const toggleShowStarredChannelSection = () => {
-        setShowStarredChannelSection(!showStarredChannelSection);
-    }
-
     return (
         <div>
             <div className='sidebar-wrapper sidebar-scroll'>
@@ -48,30 +41,40 @@ function SideBar({ socketInstance, joinedChannels, setJoinedChannels }) {
                     <h2 className='app-name'><CodeIcon className='logo' />Dev Talks</h2>
                 </div>
 
-                <div className='sidebar-section'>
-                    <h5 className='sidebar-dropdown' onClick={toggleShowStarredChannelSection}>
-                        <i className={'icon fas fa-caret-right ' + (showStarredChannelSection ? 'open' : null)}></i> Starred
-                    </h5>
-                    <SideBarSection channels={joinedChannels} star={true} showStarredChannelSection={showStarredChannelSection} />
-                </div>
+                <SideBarSection
+                    show={showStarredChannelSection}
+                    setShow={setShowStarredChannelSection}
+                    sectionTitle='Starred'
+                    items={starredChannels}
+                    type='channel'
+                    placeholder='channels'
+                />
 
-                <hr/>
+                <hr />
 
-                <div className='sidebar-section'>
-                    <h5 className='sidebar-dropdown' onClick={toggleShowJoinedChannelSection}>
-                        <i className={'icon fas fa-caret-right ' + (showJoinedChannelSection ? 'open' : null)}></i> Channels
-                    </h5>
-                    <SideBarSection channels={joinedChannels} star={false} showJoinedChannelSection={showJoinedChannelSection} />
-                    <OverlayTrigger placement='right' overlay={<Tooltip>Add Channel</Tooltip>}>
-                        <AddRoundedIcon className='icon add-icon' onClick={addChannel} />
-                    </OverlayTrigger>
-                </div>
+                <SideBarSection
+                    show={showJoinedChannelSection}
+                    setShow={setShowJoinedChannelSection}
+                    sectionTitle='Channels'
+                    items={joinedChannels}
+                    type='channel'
+                    placeholder='channels'
+                />
 
-                <hr/>
+                <OverlayTrigger placement='right' overlay={<Tooltip>Add Channel</Tooltip>}>
+                    <AddRoundedIcon className='icon add-icon' onClick={addChannel} />
+                </OverlayTrigger>
 
-                <div className='sidebar-section'>
-                    <h5><EmailIcon className='icon' />Direct Messages</h5>
-                </div>
+                <hr />
+
+                <SideBarSection
+                    show={showFriendsSection}
+                    setShow={setShowFriendsSection}
+                    sectionTitle='Friends'
+                    items={friends}
+                    type='user'
+                    placeholder='friends'
+                />
 
             </div>
             <AddChannel
