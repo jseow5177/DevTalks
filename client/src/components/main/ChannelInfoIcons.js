@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { connect } from 'react-redux'
 import axios from 'axios';
 
@@ -9,18 +9,7 @@ import MeetingRoomIcon from '@material-ui/icons/MeetingRoom';
 
 import { getDate } from '../../utils/date';
 
-function ChannelInfoIcons({ auth, channel, socketInstance, isStarred, setStarToggled }) {
-
-    const [channelId, setChannelId] = useState('');
-    const [channelName, setChannelName] = useState('');
-
-    // Get info of active channel
-    useEffect(() => {
-        if (channel.activeChannel) {
-            setChannelId(channel.activeChannel.channelId);
-            setChannelName(channel.activeChannel.channelName);
-        }
-    }, [channel]);
+function ChannelInfoIcons({ auth, socketInstance, starred, setStarred, setUserIsMember, channelId }) {
 
     const leaveChannel = () => {
         const current = new Date().getTime(); // Get the time where the message is sent
@@ -38,7 +27,7 @@ function ChannelInfoIcons({ auth, channel, socketInstance, isStarred, setStarTog
         }
 
         const messageData = {
-            channelId: channel.activeChannel.channelId,
+            channelId: channelId,
             date: date,
             message: adminMessage
         }
@@ -50,8 +39,10 @@ function ChannelInfoIcons({ auth, channel, socketInstance, isStarred, setStarTog
 
         // Remove the channel from the user's existing list of channels
         // Remove user from the channel's list of members
-        axios.delete(`http://localhost:5000/dev-talks/channels/${channelId}/users/${auth.user.id}/leave`).then(res => {
+        axios.delete(`http://localhost:5000/dev-talks/channels/${channelId}/users/${auth.user.id}/leave?starred=${starred}`).then(res => {
             socketInstance.socket.emit('userLeft', messageData);
+            setUserIsMember(false);
+            setStarred(false);
         }).catch(err => {
             console.log(err.response.data);
         });
@@ -63,16 +54,15 @@ function ChannelInfoIcons({ auth, channel, socketInstance, isStarred, setStarTog
         const starStatus = {
             channelData: {
                 channelId: channelId,
-                channelName: channelName
             },
             userData: {
                 userId: auth.user.id
             },
-            starred: isStarred
+            starred: starred
         }
 
         axios.put(`http://localhost:5000/dev-talks/channels/${channelId}/star`, starStatus).then(res => {
-            setStarToggled(Math.random()); // Trigger useEffect in HomePage to rerender SideBar
+            setStarred(!starred);
         }).catch(err => {
             console.log(err);
         });
@@ -84,7 +74,7 @@ function ChannelInfoIcons({ auth, channel, socketInstance, isStarred, setStarTog
             <OverlayTrigger placement='top' overlay={<Tooltip>Star</Tooltip>}>
                 <button className='star-btn' onClick={toggleStar}>
                     {
-                        isStarred 
+                        starred 
                         ? <span className="star orange"><i className="fas fa-star"></i></span> 
                         : <span className="star"><i className="far fa-star"></i></span>
                     }
@@ -98,7 +88,6 @@ function ChannelInfoIcons({ auth, channel, socketInstance, isStarred, setStarTog
 }
 
 const mapStateToProps = state => ({
-    channel: state.activeChannel,
     auth: state.auth,
     socketInstance: state.socket
 });
