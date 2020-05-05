@@ -12,11 +12,7 @@ const getAllUserChannels = async (req, res) => {
     try {
         const foundUser = await findUser(req, res, byId = true);
 
-        const channels = {
-            joinedChannels: foundUser.channels,
-            starredChannels: foundUser.starred
-        }
-        return res.status(200).json(channels);
+        return res.status(200).json(foundUser.channels);
 
     } catch (err) {
         return res.status(500).json({ message: err.message });
@@ -49,7 +45,8 @@ const addNewChannel = async (req, res) => {
         const joinedChannels = foundUser.channels;
         joinedChannels.push({
             channelId: channelInfo.channelId,
-            channelName: channelInfo.channelName
+            channelName: channelInfo.channelName,
+            starred: false
         });
         await foundUser.save(err => {
             if (err) console.log(err);
@@ -139,7 +136,7 @@ const joinChannel = async (req, res) => {
         const foundChannel = await getChannelInfo(req, res);
         const channelMembers = foundChannel.members;
         foundChannel.noOfMembers++;
-        channelMembers.push(userInfo);
+        channelMembers.push(userInfo.userData);
         await foundChannel.save(err => {
             if (err) console.log(err);
         });
@@ -147,7 +144,8 @@ const joinChannel = async (req, res) => {
         // Add channel to user's list of channels
         const channelData = {
             channelId: foundChannel.channelId,
-            channelName: foundChannel.channelName
+            channelName: foundChannel.channelName,
+            starred: false
         }
         const foundUser = await findUser(req, res, byId = false);
 
@@ -169,33 +167,57 @@ const leaveChannel = async (req, res) => {
 
     const channelId = req.params.channelId;
     const userId = req.params.userId;
+    const starred = req.query.starred;
 
     try {
 
-        // Remove user from channel members
-        const foundChannel = await getChannelInfo(req, res);
-        const updatedNoOfMembers = foundChannel.noOfMembers - 1;
-        const updatedMembers = foundChannel.members.filter(member => member.userId !== userId);
-        await Channel.findOneAndUpdate({channelId: channelId}, {members: updatedMembers, noOfMembers: updatedNoOfMembers});
-        await foundChannel.save(err => {
-            if (err) console.log(err);
+        // Remove user from channel members        
+        let decrease;
+        starred === 'true' ? decrease = -1 : decrease = 0;
+        await Channel.findOneAndUpdate({ channelId: channelId }, {
+            $inc:{
+                noOfMembers: -1,
+                stars: decrease
+            },
+            $pull: {
+                members: {userId: userId}
+            }
         });
 
         // Remove channel from user's list of channels
-        const foundUser = await findUser(req, res, byId = true);
-
-        const updatedChannels = foundUser.channels.filter(channel => channel.channelId !== channelId);
-        await User.findOneAndUpdate({_id: userId}, {channels: updatedChannels});
-        await foundUser.save(err => {
-            if (err) console.log(err);
-        });
+        await User.findOneAndUpdate({ _id: userId }, {$pull: {channels: {channelId: channelId}}});
 
         return res.status(200).json({ message: 'Successfully left channel!' });
 
     } catch (err) {
         return res.status(500).json({ message: err.message })
     }
-    
+
 }
 
-module.exports = { getAllUserChannels, getChannelInfo, addNewChannel, addNewMessage, getAllChannels, joinChannel, leaveChannel }
+const starChannel = async (req, res) => {
+
+    const channelId = req.params.channelId;
+    const userId = req.params.userId;
+    const starred = req.query.starred;
+
+    try {
+
+        let change;
+        starred ==='true' ? change = -1 : change = 1;
+
+        // Increase or decrease the number of channel stars
+        await Channel.findOneAndUpdate({channelId: channelId}, {$inc: {stars: change}});
+
+        // Change starred field of user channel
+        await User.findOneAndUpdate({_id: userId, "channels.channelId": channelId}, {$set: {"channels.$.starred": !starred}});
+
+        return res.status(200).json({message: 'Star toggled'});
+
+    } catch (err) {
+        return res.status(500).json({ message: err.message });
+    }
+
+}
+
+module.exports = { getAllUserChannels, getChannelInfo, addNewChannel, addNewMessage, getAllChannels, joinChannel, leaveChannel, starChannel }
