@@ -75,7 +75,7 @@ const acceptFriendRequest = async (req, res) => {
 
         await User.findOneAndUpdate({ _id: profileId }, { $push: { friends: userData, conversations: conversationId }, $pull: { pending_requests: userData } });
 
-        return res.status(200).json({ status: 'friend' });
+        return res.status(200).json({ status: 'friend', conversationId: conversationId });
 
     } catch (err) {
         return res.status(500).json({ message: err.message });
@@ -213,7 +213,8 @@ const getConversation = async (req, res) => {
 
     try {
 
-        const userConversation = await Conversation.findOne({ 'members.userId': userId, 'members.userId': profileId });
+        // const userConversation = await Conversation.findOne({ 'members.userId': userId, 'members.userId': profileId });
+        const userConversation = await Conversation.findOne({ 'members.userId': { $all: [userId, profileId] } });
         return res.status(200).json(userConversation);
 
     } catch (err) {
@@ -225,12 +226,14 @@ const getConversation = async (req, res) => {
 const addNewMessage = async (req, res) => {
 
     const newMessage = req.body;
+    //newMessage._id = uuidv1();
     const conversationId = req.params.conversationId;
 
     // Create date where message is sent 
     const date = getDate(new Date(req.body.time));
 
     const foundConversation = await Conversation.findOne({ conversationId: conversationId });
+
     const conversationMessages = foundConversation.messagesByDate; // Get conversation's existing messages
 
     // Find if there is a group of messages with the same date as above
@@ -257,6 +260,100 @@ const addNewMessage = async (req, res) => {
 
 }
 
+const getUnreadPrivateMessages = async (req, res) => {
+
+    const profileId = req.params.profileId;
+    const userId = req.params.userId;
+
+    let unreadMessages = [];
+    let unreadCount = 0;
+
+    try {
+
+        const userConversation = await Conversation.findOne({ 'members.userId': { $all: [userId, profileId] } });
+
+        if (!userConversation) {
+            return res.status(200).json({ unreadMessages: [], unreadCount: 0 });
+        }
+
+        const messagesByDate = userConversation.messagesByDate;
+
+        // Find messages not read by user
+        messagesByDate.forEach(messageByDate => {
+            const messages = messageByDate.messages;
+            messages.forEach(message => {
+                const readBy = message.readBy;
+                const user = readBy.find(user => user.userId === userId);
+                if (!user) {
+                    unreadMessages.push(message._id);
+                    unreadCount++;
+                }
+            })
+
+        });
+
+        return res.status(200).json({ unreadMessages: unreadMessages, unreadCount: unreadCount });
+
+    } catch (err) {
+        return res.status(500).json({ message: 'Error in getting conversation read-by', error: err.message });
+    }
+
+}
+
+const readPrivateMessages = async (req, res) => {
+
+    //const profileId = req.params.profileId;
+    const userId = req.params.userId;
+    const readMessages = req.body.readMessages;
+    const userData = req.body.userData;
+
+    const isProfile = req.query.profile;
+
+    try {
+
+        const profileMode = isProfile === 'true';
+
+        let userConversation;
+
+        if (profileMode) {
+            const profileId = req.params.id;
+            userConversation = await Conversation.findOne({ 'members.userId': { $all: [userId, profileId] } });
+        } else {
+            const conversationId = req.params.id;
+            userConversation = await Conversation.findOne({ conversationId: conversationId });
+        }
+
+        if (!userConversation) {
+            return res.status(200).json({ message: "Conversation doesn't exist" });
+        }
+
+        // This could be better optimized
+        for (let messageId of readMessages) {
+
+            for (messagesByDate of userConversation.messagesByDate) {
+
+                const messages = messagesByDate.messages;
+                const foundMessageIndex = messages.findIndex(message => message._id.toString() === messageId);
+
+                if (foundMessageIndex !== -1) {
+                    messages[foundMessageIndex].readBy.push(userData);
+                    continue; // Continue to next loop if message is already found
+                }
+
+            }
+
+        }
+
+        await userConversation.save();
+
+        return res.status(200).json({ message: 'Messages read!' });
+
+    } catch (err) {
+        return res.status(500).json({ message: 'Error in reading conversation messages', error: err.message });
+    }
+
+}
+
 module.exports = {
     checkFriendStatus,
     sendFriendRequest,
@@ -269,5 +366,7 @@ module.exports = {
     getPendingRequests,
     getConversations,
     getConversation,
-    addNewMessage
+    addNewMessage,
+    getUnreadPrivateMessages,
+    readPrivateMessages
 };
