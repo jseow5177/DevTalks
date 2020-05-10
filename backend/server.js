@@ -7,6 +7,7 @@ const http = require("http");
 // App routes
 const chatRoute = require('./routes/chat.route');
 const userRoute = require('./routes/user.route');
+const profileRoute = require('./routes/profile.route');
 
 // Connect to MongoDB
 const db = require('./config/db');
@@ -27,7 +28,9 @@ app.use(passport.initialize());
 // Passport config for JWT strategy
 require('./config/passport')(passport);
 
+app.use('/dev-talks', profileRoute);
 app.use('/dev-talks', chatRoute);
+
 app.use('/users', userRoute);
 
 const PORT = process.env.PORT || 5000;
