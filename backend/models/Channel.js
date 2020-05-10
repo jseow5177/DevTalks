@@ -19,12 +19,19 @@ const channelSchema = new Schema({
         date: String,
         messages: [{
             _id: false,
+            _id: String,
+            messageType: String,
             from: {
                 userId: String,
                 username: String
             },
             message: String,
-            time: Number
+            time: Number,
+            readBy: [{
+                _id: false,
+                userId: String,
+                username: String
+            }]
         }]
     }],
     noOfMembers: Number,
