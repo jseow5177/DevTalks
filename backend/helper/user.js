@@ -112,37 +112,4 @@ const findUser = async (req, res, byId) => {
 
 }
 
-// const findUserById = async (req, res) => {
-
-//     const userId = req.params.userId;
-
-//     try {
-//         const foundUser = await User.findOne({ _id: userId });
-
-//         if (!foundUser) {
-//             return res.status(404).json({ message: 'User not found' });
-//         }
-//         return foundUser;
-//     } catch (err) {
-//         return res.status(500).json({ message: err.message });
-//     }
-
-// }
-
-// const findUserByData = async (req, res) => {
-
-//     const userInfo = req.body.userData; // userId, username
-//     const userId = userInfo.userId;
-
-//     try {
-//         const foundUser = await User.findOne({ _id: userId });
-//         if (!foundUser) {
-//             return res.status(404).json({ message: 'User not found' });
-//         }
-//         return foundUser;
-//     } catch (err) {
-//         return res.status(500).json({ message: err.message });
-//     }
-// }
-
 module.exports = { registerUser, loginUser, findUser }
