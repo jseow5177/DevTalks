@@ -1,5 +1,6 @@
+const { v1: uuidv1 } = require('uuid');
+
 const getDate = require('./date');
-const { findUser } = require('./user');
 
 // Channel Model
 const Channel = require('../models/Channel');
@@ -7,13 +8,11 @@ const User = require('../models/User');
 
 const getAllUserChannels = async (req, res) => {
 
-    // const userId = req.params.userId;
+    const userId = req.params.userId;
 
     try {
-        const foundUser = await findUser(req, res, byId = true);
-
-        return res.status(200).json(foundUser.channels);
-
+        const foundChannels = await User.findOne({ _id: userId }, { _id: 0, channels: 1 });
+        return res.status(200).json(foundChannels.channels);
     } catch (err) {
         return res.status(500).json({ message: err.message });
     }
@@ -35,38 +34,30 @@ const getChannelInfo = async (req, res) => {
 
 const addNewChannel = async (req, res) => {
 
-    const channelInfo = req.body.channelData; // channelId, channelName, channelDescription
-    const userInfo = req.body.userData; // userId, username
+    const channelData = req.body.channelData;
+    const userData = req.body.userData;
 
     try {
-        /* Find logged in user and add this channel to the user's list of channels */
-        const foundUser = await findUser(req, res, byId = false);
 
-        const joinedChannels = foundUser.channels;
-        joinedChannels.push({
-            channelId: channelInfo.channelId,
-            channelName: channelInfo.channelName,
-            starred: false
-        });
-        await foundUser.save(err => {
-            if (err) console.log(err);
-        });
+        /* Find logged in user and add this channel to the user's list of channels */
+        const updatedUser = await User.findOneAndUpdate({ _id: userData.userId }, {
+            $push: {
+                channels: {
+                    channelId: channelData.channelId,
+                    channelName: channelData.channelName,
+                    starred: false
+                }
+            }
+        }, { new: true });
 
         /* Add this new channel to the collection of channels */
-        const newChannel = new Channel({
-            ...channelInfo,
-            messages: [], // No messages yet
-            owner: userInfo,
-            members: [userInfo], // The first member is the owner
-            noOfMembers: 1, // One new member
-            stars: 0 // No stars
-        })
+        const newChannel = new Channel(channelData);
         await newChannel.save(err => {
             if (err) console.log(err);
         });
 
         /* Return the new channel list of user */
-        return res.status(200).json(joinedChannels);
+        return res.status(200).json(updatedUser.channels);
 
     } catch (err) {
         console.log(err);
@@ -78,6 +69,7 @@ const addNewChannel = async (req, res) => {
 const addNewMessage = async (req, res) => {
 
     const newMessage = req.body;
+    //newMessage._id = uuidv1();
 
     // Create date where message is sent 
     const date = getDate(new Date(req.body.time));
@@ -113,13 +105,7 @@ const getAllChannels = async (req, res) => {
 
     try {
         const allChannels = await Channel.find();
-
-        if (allChannels) {
-            return res.status(200).json(allChannels);
-        } else {
-            return res.status(404).json('No channels exist');
-        }
-
+        return res.status(200).json(allChannels);
     } catch (err) {
         return res.status(500).json({ message: err.message });
     }
@@ -128,34 +114,19 @@ const getAllChannels = async (req, res) => {
 
 const joinChannel = async (req, res) => {
 
-    const userInfo = req.body; // userId and username
+    const userData = req.body.userData; // userId and username
+    const channelData = req.body.channelData; // channelId and channelName
+    const channelId = req.params.channelId;
 
     try {
 
         // Add new user to channel members
-        const foundChannel = await getChannelInfo(req, res);
-        const channelMembers = foundChannel.members;
-        foundChannel.noOfMembers++;
-        channelMembers.push(userInfo.userData);
-        await foundChannel.save(err => {
-            if (err) console.log(err);
-        });
+        await Channel.findOneAndUpdate({ channelId: channelId }, { $push: { members: userData }, $inc: { noOfMembers: 1 } });
 
         // Add channel to user's list of channels
-        const channelData = {
-            channelId: foundChannel.channelId,
-            channelName: foundChannel.channelName,
-            starred: false
-        }
-        const foundUser = await findUser(req, res, byId = false);
+        await User.findOneAndUpdate({ _id: userData.userId }, { $push: { channels: channelData } });
 
-        const userChannels = foundUser.channels;
-        userChannels.push(channelData);
-        await foundUser.save(err => {
-            if (err) console.log(err);
-        });
-
-        return res.status(200).json({ message: 'Successfully joined channel!' });
+        return res.status(200).json(channelData);
 
     } catch (err) {
         return res.status(500).json({ message: err.message })
@@ -174,18 +145,10 @@ const leaveChannel = async (req, res) => {
         // Remove user from channel members        
         let decrease;
         starred === 'true' ? decrease = -1 : decrease = 0;
-        await Channel.findOneAndUpdate({ channelId: channelId }, {
-            $inc:{
-                noOfMembers: -1,
-                stars: decrease
-            },
-            $pull: {
-                members: {userId: userId}
-            }
-        });
+        await Channel.findOneAndUpdate({ channelId: channelId }, { $inc: { noOfMembers: -1, stars: decrease }, $pull: { members: { userId: userId } } });
 
         // Remove channel from user's list of channels
-        await User.findOneAndUpdate({ _id: userId }, {$pull: {channels: {channelId: channelId}}});
+        await User.findOneAndUpdate({ _id: userId }, { $pull: { channels: { channelId: channelId } } });
 
         return res.status(200).json({ message: 'Successfully left channel!' });
 
@@ -199,25 +162,111 @@ const starChannel = async (req, res) => {
 
     const channelId = req.params.channelId;
     const userId = req.params.userId;
-    const starred = req.query.starred;
+    let starred = req.query.starred;
 
     try {
 
         let change;
-        starred ==='true' ? change = -1 : change = 1;
+        starred === 'true' ? change = -1 : change = 1;
+
+        starred = (starred === 'true'); // Convert to Boolean
 
         // Increase or decrease the number of channel stars
-        await Channel.findOneAndUpdate({channelId: channelId}, {$inc: {stars: change}});
+        await Channel.findOneAndUpdate({ channelId: channelId }, { $inc: { stars: change } });
 
         // Change starred field of user channel
-        await User.findOneAndUpdate({_id: userId, "channels.channelId": channelId}, {$set: {"channels.$.starred": !starred}});
+        await User.findOneAndUpdate({ _id: userId, "channels.channelId": channelId }, { $set: { "channels.$.starred": !starred } });
 
-        return res.status(200).json({message: 'Star toggled'});
+        return res.status(200).json({ message: 'Star toggled' });
 
     } catch (err) {
-        return res.status(500).json({ message: err.message });
+        return res.status(500).json({ message: 'Error in toggling channel star', error: err.message });
     }
 
 }
 
-module.exports = { getAllUserChannels, getChannelInfo, addNewChannel, addNewMessage, getAllChannels, joinChannel, leaveChannel, starChannel }
+const getUnreadChannelMessages = async (req, res) => {
+
+    const channelId = req.params.channelId;
+    const userId = req.params.userId;
+
+    let unreadMessages = [];
+    let unreadCount = 0;
+
+    try {
+
+        const foundChannel = await Channel.findOne({ channelId: channelId });
+
+        const messagesByDate = foundChannel.messagesByDate;
+
+        // Find messages not read by user
+        messagesByDate.forEach(messageByDate => {
+            const messages = messageByDate.messages;
+            messages.forEach(message => {
+                const readBy = message.readBy;
+                const user = readBy.find(user => user.userId === userId);
+                if (!user) {
+                    unreadMessages.push(message._id);
+                    unreadCount++;
+                }
+            })
+
+        });
+
+        return res.status(200).json({ unreadMessages: unreadMessages, unreadCount: unreadCount });
+
+    } catch (err) {
+        return res.status(500).json({ message: 'Error in getting channel read-by', error: err.message });
+    }
+
+}
+
+const readChannelMessages = async (req, res) => {
+
+    const channelId = req.params.channelId;
+    const readMessages = req.body.readMessages;
+    const userData = req.body.userData;
+
+    try {
+
+        const foundChannel = await Channel.findOne({ channelId: channelId });
+
+        // This could be better optimized
+        for (let messageId of readMessages) {
+
+            for (messagesByDate of foundChannel.messagesByDate) {
+
+                const messages = messagesByDate.messages;
+                const foundMessageIndex = messages.findIndex(message => message._id === messageId);
+
+                if (foundMessageIndex !== -1) {
+                    messages[foundMessageIndex].readBy.push(userData);
+                    //continue; // Continue to next loop if message is already found
+                }
+
+            }
+
+        }
+
+        await foundChannel.save();
+
+        return res.status(200).json({ message: 'Messages read!' });
+
+    } catch (err) {
+        return res.status(500).json({ message: 'Error in reading channel messages', error: err.message });
+    }
+
+}
+
+module.exports = {
+    getAllUserChannels,
+    addNewChannel,
+    addNewMessage,
+    getAllChannels,
+    joinChannel,
+    leaveChannel,
+    starChannel,
+    getUnreadChannelMessages,
+    getChannelInfo,
+    readChannelMessages
+}
