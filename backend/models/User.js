@@ -5,15 +5,32 @@ const userSchema = new Schema({
     username: String,
     email: String,
     password: String,
+    bio: String,
     channels: [{
         _id: false,
         channelId: String,
-        channelName: String
+        channelName: String,
+        starred: Boolean,
     }],
-    starred: [{
+    conversations: [String], // Store conversationIds
+    friends: [{
         _id: false,
-        channelId: String,
-        channelName: String
+        userId: String,
+        username: String,
+        status: String
+    }],
+    // Users who sent you requests
+    friend_requests: [{
+        _id: false,
+        userId: String,
+        username: String,
+        // isRead: Boolean // Implement a simple notification feature
+    }],
+    // Users who you have sent requests
+    pending_requests: [{
+        _id: false,
+        userId: String,
+        username: String
     }]
 });
 
