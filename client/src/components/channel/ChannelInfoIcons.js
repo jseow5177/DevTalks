@@ -1,6 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux'
 import axios from 'axios';
+import { v1 as uuidv1 } from 'uuid';
 
 import OverlayTrigger from 'react-bootstrap/OverlayTrigger';
 import Tooltip from 'react-bootstrap/Tooltip';
@@ -15,27 +16,30 @@ function ChannelInfoIcons({ auth, socketInstance, channelId, channelName, starre
         const current = new Date().getTime(); // Get the time where the message is sent
         const date = getDate(new Date()); // Get the date where the message is sent
 
+        const userData = {
+            userId: auth.user.id,
+            username: auth.user.username
+        }
+
         // Admin message to be saved into db and notify other users that a new user has joined
         const adminMessage = {
+            _id: uuidv1(),
             messageType: 'admin',
-            from: {
-                userId: auth.user.id,
-                username: auth.user.username
-            },
+            from: userData,
             message: 'left',
             time: current
         }
 
         const messageData = {
-            channelId: channelId,
+            id: channelId,
             date: date,
             message: adminMessage
         }
 
         // Save admin message into db
-        axios.post(`http://localhost:5000/dev-talks/channels/${channelId}/messages/new-message`, adminMessage).catch(err => {
-            console.log(err.response.data);
-        });
+        axios.post(`http://localhost:5000/dev-talks/channels/${channelId}/messages/new-message`, adminMessage)
+            .then(res => socketInstance.socket.emit('notification', { id: channelId, messageId: adminMessage._id }))
+            .catch(err => console.log(err.response.data));
 
         // Remove the channel from the user's existing list of channels
         // Remove user from the channel's list of members
@@ -47,6 +51,7 @@ function ChannelInfoIcons({ auth, socketInstance, channelId, channelName, starre
             if (starred) {
                 setStarredChannels(starredChannels => starredChannels.filter(starredChannel => starredChannel.channelId !== channelId));
             }
+        
         }).catch(err => {
             console.log(err.response.data);
         });
