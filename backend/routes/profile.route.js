@@ -13,7 +13,9 @@ const {
     getPendingRequests,
     getConversations,
     getConversation,
-    addNewMessage
+    addNewMessage,
+    getUnreadPrivateMessages,
+    readPrivateMessages
 } = require('../helper/profile');
 
 // Check if user is a friend of the selected profile
@@ -87,6 +89,18 @@ router.route('/conversations/:conversationId/messages/new-message').post(async (
 
     await addNewMessage(req, res);
 
-})
+});
+
+router.route('/conversations/:profileId/read-by/:userId').get(async (req, res) => {
+
+    await getUnreadPrivateMessages(req, res);
+
+});
+
+router.route('/conversations/:id/read-by/:userId').post(async (req, res) => {
+
+    await readPrivateMessages(req, res);
+
+});
 
 module.exports = router;
