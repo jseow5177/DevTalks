@@ -123,6 +123,21 @@ const joinChannel = async (req, res) => {
         // Add new user to channel members
         await Channel.findOneAndUpdate({ channelId: channelId }, { $push: { members: userData }, $inc: { noOfMembers: 1 } });
 
+        // Set user to read all messages
+        const foundChannel = await Channel.findOne({ channelId: channelId });
+
+        const messagesByDate = foundChannel.messagesByDate;
+
+        // Find messages not read by user
+        messagesByDate.forEach(messageByDate => {
+            const messages = messageByDate.messages;
+            messages.forEach(message => {
+                message.readBy.push(userData);
+            });
+        });
+
+        await foundChannel.save();
+
         // Add channel to user's list of channels
         await User.findOneAndUpdate({ _id: userData.userId }, { $push: { channels: channelData } });
 
