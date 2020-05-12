@@ -3,7 +3,6 @@ import setAuthToken from '../utils/setAuthToken';
 import jwt_decode from 'jwt-decode';
 
 import { GET_ERRORS, SET_CURRENT_USER } from './types';
-import { getActiveChannel } from './channelActions';
 
 // Login user and set up token
 export const loginUser = userData => {
@@ -49,7 +48,6 @@ export const logoutUser = () => {
         setAuthToken(false);
         // Pass empty object to setCurrentUser. Will set isAuthenticated to false
         dispatch(setCurrentUser({}));
-        dispatch(getActiveChannel(null));
     }
 }
 
