@@ -5,7 +5,8 @@ import { connect } from 'react-redux';
 import Modal from 'react-bootstrap/Modal';
 import Form from 'react-bootstrap/Form';
 import Button from 'react-bootstrap/Button';
-import FormRow from './FormRow';
+
+import FormRow from '../main/FormRow';
 import { registerUser } from '../../actions/authActions';
 
 import EmailIcon from '@material-ui/icons/Email';
@@ -23,14 +24,17 @@ function Register({ show, handleCloseRegister, errors, registerUser }) {
     });
     const [formErrors, setFormErrors] = useState({});
 
+    // Check if there are any form errors
     useEffect(() => {
         setFormErrors(errors);
     }, [errors]);
- 
+
+    // Handle input change in form
     const handleChange = (event) => {
         setRegisterForm({ ...registerForm, [event.target.id]: event.target.value });
     }
 
+    // Handle form submit
     const handleFormSubmit = () => {
         registerUser(registerForm);
     }
