@@ -11,15 +11,15 @@ import SideBarSection from './SideBarSection';
 import CodeIcon from '@material-ui/icons/Code';
 import AddRoundedIcon from '@material-ui/icons/AddRounded';
 
-function SideBar({ socketInstance, joinedChannels, setJoinedChannels, starredChannels, friends }) {
+function SideBar({ socketInstance, joinedChannels, setJoinedChannels, starredChannels, friends, friendRequests }) {
 
     const [showJoinedChannelSection, setShowJoinedChannelSection] = useState(false);
     const [showStarredChannelSection, setShowStarredChannelSection] = useState(false);
     const [showFriendsSection, setShowFriendsSection] = useState(false);
+    const [showFriendRequestsSection, setShowFriendRequestsSection] = useState(false);
 
     // When + sign is clicked, show AddChannel
     const [showAddChannel, setShowAddChannel] = useState(false);
-    
 
     // Add user socket to the all his or her channels
     useEffect(() => {
@@ -76,12 +76,26 @@ function SideBar({ socketInstance, joinedChannels, setJoinedChannels, starredCha
                     placeholder='friends'
                 />
 
+                <hr />
+
+                <SideBarSection
+                    show={showFriendRequestsSection}
+                    setShow={setShowFriendRequestsSection}
+                    sectionTitle='Friend Requests'
+                    items={friendRequests}
+                    type='user'
+                    placeholder='requests'
+                    // A special prop for friend request section
+                    request={true}
+                />
+
             </div>
             <AddChannel
                 showAddChannel={showAddChannel}
                 setShowAddChannel={setShowAddChannel}
                 setJoinedChannels={setJoinedChannels}
             />
+
         </div>
     )
 }
