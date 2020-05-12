@@ -1,149 +1,122 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { connect } from 'react-redux';
+import axios from 'axios';
 
 import SyncLoader from 'react-spinners/SyncLoader';
 
-import { sendNotifications } from '../../actions/notificationActions';
-
 import Messages from './Messages';
 
-function ChatBody({ channel, socketInstance, typingUser, sendNotifications }) {
+function ChatBody({ auth, socketInstance, type, channelId, conversationId, messages, setMessages, typingUser, channel }) {
 
-    const [channelId, setChannelId] = useState("");
-    const [messages, setMessages] = useState([]);
-    const [rawMessage, setRawMessage] = useState("");
-    const [isNewMessage, setIsNewMessage] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
-    const [hasNotifications, setHasNotifications] = useState(false);
+    const [isLoading, setIsLoading] = useState(true); // Show chat spinner during initial scroll of chat body
+    const [newMessage, setNewMessage] = useState(null);
+    const [id, setId] = useState(null);
 
-    const scrollToBottom = () => {
-        const div = document.querySelector('#dummy-div');
-        // Check if all messages are loaded and scrolled to the bottom
-        const intersectionObserver = new IntersectionObserver((entries) => {
-            let [entry] = entries;
-            if (entry.isIntersecting) {
-                setTimeout(() => {
-                    setIsLoading(false)
-                }, 500);
-            }
-        });
-        // start the bottom dummy div
-        intersectionObserver.observe(div);
-        setTimeout(() => div.scrollIntoView());
-    }
-
-    // Get the Id of active channel
     useEffect(() => {
 
-        if (channel.activeChannel) {
-            setChannelId(channel.activeChannel.channelId);
+        if (type === 'channel') {
+            setId(channelId);
+        } else if (type === 'user') {
+            setId(conversationId);
         }
 
-    }, [channel]);
+    }, [type, channelId, conversationId]);
 
-    // Retrive all past messages
+    // Listen for new messages
     useEffect(() => {
 
-        if (channelId) {
-            setIsLoading(true);
-            axios.get(`http://localhost:5000/dev-talks/channels/${channelId}/`).then(res => {
-                setMessages(res.data.messagesByDate);
-                scrollToBottom();
-            }).catch(err => {
-                console.log(err.response.data);
+        if (socketInstance.socket) {
+            const messageListener = socketInstance.socket.on('message', messageData => {
+                setNewMessage(messageData);
             });
+
+            return () => socketInstance.socket.removeListener('message', messageListener);
         }
 
-    }, [channelId]);
+    }, [socketInstance]);
 
-    // Attach socket instance to receive new messages
+    // Update readBy
     useEffect(() => {
 
-        socketInstance.socket.on('message', messageData => {
-            console.log('hello');
-            setRawMessage(messageData);
-            setIsNewMessage(true);
-        });
+        if (newMessage && newMessage.id === id) {
+            const userData = {
+                userId: auth.user.id,
+                username: auth.user.username
+            }
+            const readMessagesData = {
+                userData: userData,
+                readMessages: [newMessage.message._id]
+            }
 
-    }, [socketInstance.socket]);
+            if (newMessage.id === channelId) {
+                axios.post(`http://localhost:5000/dev-talks/channels/${newMessage.id}/read-by/${auth.user.id}`, readMessagesData)
+                    .catch(err => console.log(err));
+            } else if (newMessage.id === conversationId) {
+                axios.post(`http://localhost:5000/dev-talks/conversations/${newMessage.id}/read-by/${auth.user.id}?profile=false`, readMessagesData)
+                    .catch(err => console.log(err));
+            }
+        }
 
-    // Add new messages received by socket
-    if (rawMessage && isNewMessage) {
+    }, [auth.user, channelId, conversationId, newMessage, id]);
 
-        setIsNewMessage(false);
+    // Update messages when there is new message
+    useEffect(() => {
 
-        if (rawMessage.channelId === channelId) {
-
+        if (newMessage && newMessage.id === id) {
             setMessages(messages => {
 
                 // Get the messages sent at the latest date
-                const latestMessagesGroupedByDate = messages[messages.length - 1];
+                const latestMessages = messages[messages.length - 1];
 
                 // If there are no messages (new channel) or the newest message is sent on a new latest date
-                if (!latestMessagesGroupedByDate || latestMessagesGroupedByDate.date !== rawMessage.date) {
-                    messages.push({
-                        date: rawMessage.date,
-                        messages: [rawMessage.message]
-                    });
+                if (!latestMessages || latestMessages.date !== newMessage.date) {
+                    messages.push({ date: newMessage.date, messages: [newMessage.message] });
 
                     // If the newest message is sent on the same latest date
-                } else if (latestMessagesGroupedByDate.date === rawMessage.date) {
-
-                    const latestMessage = latestMessagesGroupedByDate.messages[latestMessagesGroupedByDate.messages.length - 1];
-
-                    // This condition prevents setMessages from being executed twice on the first render
-                    if (latestMessage !== rawMessage.message) {
-                        latestMessagesGroupedByDate.messages.push(rawMessage.message);
-                        messages.pop();
-                        messages.push(latestMessagesGroupedByDate);
-                    }
-
+                } else if (latestMessages.date === newMessage.date) {
+                    // const latestMessage = latestMessages.messages[latestMessages.messages.length - 1];
+                    latestMessages.messages.push(newMessage.message);
+                    messages.pop();
+                    messages.push(latestMessages);
                 }
-
                 return messages;
 
             });
-
-            scrollToBottom();
-
-        } else {
-
-            setHasNotifications(true);
-            
+            setNewMessage(null);
         }
 
-    }
+    }, [newMessage, setMessages, id]);
 
 
+    // Auto scroll to bottom
     useEffect(() => {
-        if (hasNotifications) {
-            sendNotifications(rawMessage.channelId);
-        }
-        setHasNotifications(false);
-    }, [setHasNotifications, hasNotifications, sendNotifications, rawMessage])
+
+        const div = document.querySelector('#dummy-div');
+        const timeout = setTimeout(() => {
+            div.scrollIntoView();
+            setIsLoading(false);
+        }, 100);
+        return () => clearTimeout(timeout);
+        
+    }, [messages, newMessage]);
 
     return (
         <div className='chat-body-wrapper'>
             <div className={'loading-screen ' + (isLoading ? null : 'hidden')}><SyncLoader color={"#4B0082"} loading={isLoading} /></div>
             <div className={'messages scroll ' + (isLoading ? 'hidden' : null)} >
-                <div>{messages.map((messages, index) => <Messages key={index} messages={messages} />)}</div>
-                <div id="dummy-div" style={{ border: '1px solid white' }}></div>
+                {messages.map((messages, index) => <Messages key={index} messages={messages} />)}
+                <div id='dummy-div' />
             </div>
-            {typingUser.channelId === channelId && typingUser.username !== '' ? <div>{typingUser.username} is typing... </div> : null}
+            {typingUser.id === id && typingUser.username !== '' ? <div>{typingUser.username} is typing... </div> : null}
         </div>
     )
 }
 
 const mapStateToProps = state => ({
-    channel: state.activeChannel,
-    socketInstance: state.socket
+    socketInstance: state.socket,
+    auth: state.auth,
+    channel: state.activeChannel
 });
 
-const mapDispatchToProps = dispatch => {
-    return {
-        sendNotifications: (channelId) => dispatch(sendNotifications(channelId))
-    }
-}
 
-export default connect(mapStateToProps, mapDispatchToProps)(ChatBody);
+export default connect(mapStateToProps, null)(ChatBody);
