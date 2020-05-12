@@ -6,14 +6,13 @@ export const sendFriendRequest = (friendRequestData, socketInstance, setProfileS
     const userId = friendRequestData.userData.userId;
     const profileId = friendRequestData.profileData.userId;
 
-    // socketInstance.socket.emit('newFriendRequest', friendRequestData.userData);
     socketInstance.socket.emit('newFriendRequest', friendRequestData);
 
     axios.put(`http://localhost:5000/dev-talks/users/${userId}/send-friend-request/${profileId}`, friendRequestData).then(res => {
         setProfileStatus(res.data.status);
         setPendingRequests(pendingRequests => [...pendingRequests, friendRequestData.profileData]); // User has one new pending request
     }).catch(err => console.log(err.response.data));
-    
+
 }
 
 // Accept friend request
@@ -22,12 +21,14 @@ export const acceptFriendRequest = (friendRequestData, socketInstance, setProfil
     const userId = friendRequestData.userData.userId;
     const profileId = friendRequestData.profileData.userId;
 
-    socketInstance.socket.emit('acceptFriendRequest', friendRequestData);
-
     axios.put(`http://localhost:5000/dev-talks/users/${userId}/accept-friend-request/${profileId}`, friendRequestData).then(res => {
         setProfileStatus(res.data.status);
         setFriends(friends => [...friends, friendRequestData.profileData]); // User has one new friend
         setFriendRequests(friendRequests => friendRequests.filter(friendRequest => friendRequest.userId !== profileId));
+
+        socketInstance.socket.emit('acceptFriendRequest', { friendRequestData: friendRequestData, conversationId: res.data.conversationId });
+        socketInstance.socket.emit('joinNewConversation', res.data.conversationId);
+
     }).catch(err => console.log(err.response.data));
 
 }
@@ -63,8 +64,8 @@ export const rejectFriendRequest = (friendRequestData, socketInstance, setProfil
 }
 
 // Remove friend
-export const removeFriend = (friendRequestData, socketInstance, setProfileStatus, setFriends) => {
-    
+export const removeFriend = (friendRequestData, socketInstance, setProfileStatus, setFriends, setMessages, setConversationId) => {
+
     const userId = friendRequestData.userData.userId;
     const profileId = friendRequestData.profileData.userId;
 
@@ -73,6 +74,8 @@ export const removeFriend = (friendRequestData, socketInstance, setProfileStatus
     axios.delete(`http://localhost:5000/dev-talks/users/${userId}/unfriend/${profileId}`, friendRequestData).then(res => {
         setProfileStatus(res.data.status);
         setFriends(friends => friends.filter(friend => friend.userId !== profileId));
+        setMessages([]);
+        setConversationId('');
     }).catch(err => console.log(err.response.data));
 
 }
