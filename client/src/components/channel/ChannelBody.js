@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { connect } from 'react-redux';
 import axios from 'axios';
+import { v1 as uuidv1 } from 'uuid';
 
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
@@ -19,40 +20,55 @@ function ChannelBody({ channel, auth, socketInstance, joinedChannels, starredCha
     const [selectedChannel, setSelectedChannel] = useState(null);
 
     useEffect(() => {
+
         setSelectedChannel(channel.activeChannel);
-    }, [channel]);
+
+    }, [channel.activeChannel]);
 
     // Get number of participants in the selected channel
     const [noOfMembers, setNoOfMembers] = useState(0);
 
     useEffect(() => {
+
         if (selectedChannel) {
             setNoOfMembers(selectedChannel.noOfMembers);
         }
+
     }, [selectedChannel]);
 
     // Listen for changes in number of members
     useEffect(() => {
+
+        let newMemberListener;
+        let userLeftListener;
+
         if (socketInstance.socket && selectedChannel) {
             // Listen for users who join channel
-            socketInstance.socket.on('newMember', channelId => {
+            newMemberListener = socketInstance.socket.on('newMember', channelId => {
                 if (selectedChannel.channelId === channelId) {
                     setNoOfMembers(oldNoOfMembers => oldNoOfMembers + 1);
                 }
             });
             // Listen for users who leave channel
-            socketInstance.socket.on('userLeft', channelId => {
+            userLeftListener = socketInstance.socket.on('userLeft', channelId => {
                 if (selectedChannel.channelId === channelId) {
                     setNoOfMembers(oldNoOfMembers => oldNoOfMembers - 1);
                 }
             });
         }
+
+        return () => {
+            socketInstance.socket.removeListener('newMember', newMemberListener);
+            socketInstance.socket.removeListener('userLeft', userLeftListener);
+        }
+
     }, [socketInstance.socket, selectedChannel]);
 
     // Check if user is a member
     const [userIsMember, setUserIsMember] = useState(false);
 
     useEffect(() => {
+
         if (selectedChannel) {
             const foundChannel = joinedChannels.find(joinedChannel => joinedChannel.channelId === selectedChannel.channelId);
             if (foundChannel) {
@@ -61,12 +77,14 @@ function ChannelBody({ channel, auth, socketInstance, joinedChannels, starredCha
                 setUserIsMember(false);
             }
         }
+
     }, [selectedChannel, joinedChannels]);
 
     // Check if channel is starred by user
     const [starred, setStarred] = useState(false);
 
     useEffect(() => {
+
         if (selectedChannel) {
             const foundChannel = starredChannels.find(starredChannel => starredChannel.channelId === selectedChannel.channelId);
             if (foundChannel) {
@@ -75,6 +93,7 @@ function ChannelBody({ channel, auth, socketInstance, joinedChannels, starredCha
                 setStarred(false);
             }
         }
+
     }, [selectedChannel, starredChannels]);
 
     // Get channelId, channel name, channel description, channelOwner and messages
@@ -85,6 +104,7 @@ function ChannelBody({ channel, auth, socketInstance, joinedChannels, starredCha
     const [messages, setMessages] = useState([]);
 
     useEffect(() => {
+
         if (selectedChannel) {
             setChannelId(selectedChannel.channelId);
             setChannelName(selectedChannel.channelName);
@@ -92,6 +112,7 @@ function ChannelBody({ channel, auth, socketInstance, joinedChannels, starredCha
             setOwner(selectedChannel.owner);
             setMessages(selectedChannel.messagesByDate);
         }
+
     }, [selectedChannel]);
 
     const [isSuccess, setIsSuccess] = useState(false); // Check if user successfully joined channel
@@ -105,36 +126,42 @@ function ChannelBody({ channel, auth, socketInstance, joinedChannels, starredCha
 
         // Admin message to be saved into db and notify other users that a new user has joined
         const adminMessage = {
+            _id: uuidv1(),
             messageType: 'admin',
             from: {
                 userId: auth.user.id,
                 username: auth.user.username
             },
             message: 'joined',
-            time: current
+            time: current,
+            readBy: {
+                userId: auth.user.id,
+                username: auth.user.username
+            }
         }
 
         const messageData = {
-            channelId: channelId,
+            id: channelId,
             date: date,
             message: adminMessage
         }
 
         // Save admin message into db
         axios.post(`http://localhost:5000/dev-talks/channels/${channelId}/messages/new-message`, adminMessage)
+            .then(res => socketInstance.socket.emit('notification', { id: channelId, messageId: adminMessage._id }))
             .catch(err => console.log(err.response.data));
 
-            const data = {
-                userData: {
-                    userId: auth.user.id,
-                    username: auth.user.username,
-                },
-                channelData: {
-                    channelId: channelId,
-                    channelName: channelName,
-                    starred: false
-                }
+        const data = {
+            userData: {
+                userId: auth.user.id,
+                username: auth.user.username,
+            },
+            channelData: {
+                channelId: channelId,
+                channelName: channelName,
+                starred: false
             }
+        }
 
         // Add a new channel to the user's existing list of channels
         // Add user to the channel's list of members
@@ -153,6 +180,8 @@ function ChannelBody({ channel, auth, socketInstance, joinedChannels, starredCha
             setIsSuccess(false);
             setIsFailure(false);
         }, 3000);
+
+        //setAlertTimeout(timeout);
 
     }
 
