@@ -27,6 +27,7 @@ export const acceptFriendRequest = (friendRequestData, socketInstance, setProfil
         setFriendRequests(friendRequests => friendRequests.filter(friendRequest => friendRequest.userId !== profileId));
 
         socketInstance.socket.emit('acceptFriendRequest', { friendRequestData: friendRequestData, conversationId: res.data.conversationId });
+        // socketInstance.socket.emit('acceptFriendRequest', friendRequestData);
         socketInstance.socket.emit('joinNewConversation', res.data.conversationId);
 
     }).catch(err => console.log(err.response.data));
