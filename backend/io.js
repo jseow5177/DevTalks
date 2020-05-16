@@ -10,6 +10,10 @@ module.exports = (io) => {
             });
         });
 
+        socket.on('linkToStarChannel', data => {
+            io.to(data.channelId).emit('linkToStarChannel', data);
+        })
+
         // When app is loaded, add user's socket into all his or her conversations
         socket.on('joinConversation', joinedConversations => {
             joinedConversations.forEach(joinedConversation => {
@@ -23,8 +27,7 @@ module.exports = (io) => {
     
         // Receive new message and emit to all clients in the channel or conversation
         socket.on('sendMessage', data => {
-            io.to(data.id).emit('message', data);
-            
+            io.to(data.id).emit('message', data);      
         });
 
         socket.on('notification', data => {
@@ -41,12 +44,13 @@ module.exports = (io) => {
             io.to(data.id).emit('message', data);
         });
 
-        // When a user joins a channel:
+        // When a user leaves a channel:
         // 1. Perform live update on the body (eg: Update SideBar, update number of participants on ChannelInfo)
-        // 2. Emit an admin message that says a new user has joined
+        // 2. Emit an admin message that says a new user has left
         socket.on('userLeft', data => {
             io.to(data.id).emit('userLeft', data.id);
             io.to(data.id).emit('message', data);
+            socket.leave(data.id);
         });
         
         // Show <username> is typing...
