@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 
 import SideBarNav from './SideBarNav'
 
-function SideBarSection({ setShow, show, sectionTitle, items, type, placeholder, request, auth, socketInstance }) {
+function SideBarSection({ setShow, show, sectionTitle, items, type, placeholder, request, auth, socketInstance, star }) {
 
     // Set total unread messages for each section
     const [totalUnreads, setTotalUnreads] = useState(0);
@@ -14,7 +14,7 @@ function SideBarSection({ setShow, show, sectionTitle, items, type, placeholder,
 
     // Get user's friend requests
     useEffect(() => {
-        
+
         if (request) setFriendRequestCount(items.length);
 
     }, [auth.user, request, items]);
@@ -23,11 +23,12 @@ function SideBarSection({ setShow, show, sectionTitle, items, type, placeholder,
     useEffect(() => {
 
         if (socketInstance.socket && request) {
-            const friendRequestListener = socketInstance.socket.on('newFriendRequest', friendRequestData => {
+            const friendRequestListener = friendRequestData => {
                 if (friendRequestData.profileData.userId === auth.user.id) {
                     setFriendRequestCount(friendRequestCount => friendRequestCount + 1);
                 }
-            });
+            }
+            socketInstance.socket.on('newFriendRequest', friendRequestListener);
             return () => socketInstance.socket.removeListener('newFriendRequest', friendRequestListener);
         }
 
@@ -37,25 +38,32 @@ function SideBarSection({ setShow, show, sectionTitle, items, type, placeholder,
     useEffect(() => {
 
         if (socketInstance.socket && request) {
-            /*
-            const acceptFriendRequestListener = socketInstance.socket.on('acceptFriendRequest', friendRequestData => {
-                if (friendRequestData.userData.userId === auth.user.id) {
-                    setFriendRequestCount(friendRequestCount);
-                }
-            });
-            */
-            const rejectFriendRequestListener = socketInstance.socket.on('rejectFriendRequest', friendRequestData => {
+
+            const rejectFriendRequestListener = friendRequestData => {
                 if (friendRequestData.userData.userId === auth.user.id) {
                     setFriendRequestCount(friendRequestCount => friendRequestCount - 1);
                 }
-            });
-            const cancelFriendRequestListener = socketInstance.socket.on('cancelFriendRequest', friendRequestData => {
+            }
+
+            const cancelFriendRequestListener = friendRequestData => {
                 if (friendRequestData.profileData.userId === auth.user.id) {
                     setFriendRequestCount(friendRequestCount => friendRequestCount - 1);
                 }
-            });
+            }
+            /*
+            function acceptFriendRequestListener () {
+                socketInstance.socket.on('acceptFriendRequest', friendRequestData => {
+                    if (friendRequestData.userData.userId === auth.user.id) {
+                        setFriendRequestCount(friendRequestCount => friendRequestCount - 1);
+                    }
+                });
+            };
+            */
+            socketInstance.socket.on('rejectFriendRequest', rejectFriendRequestListener);
+            socketInstance.socket.on('cancelFriendRequest', cancelFriendRequestListener);
+
             return () => {
-                //socketInstance.socket.removeListener('acceptFriendRequest', acceptFriendRequestListener);
+                // socketInstance.socket.removeListener('acceptFriendRequest', acceptFriendRequestListener);
                 socketInstance.socket.removeListener('rejectFriendRequest', rejectFriendRequestListener);
                 socketInstance.socket.removeListener('cancelFriendRequest', cancelFriendRequestListener);
             }
@@ -73,10 +81,10 @@ function SideBarSection({ setShow, show, sectionTitle, items, type, placeholder,
                 <h5 className='sidebar-dropdown' onClick={toggleShow}>
                     <i className={'icon fas fa-caret-right ' + (show ? 'open' : null)}></i> {sectionTitle}
                     {
-                        request 
-                        ? friendRequestCount ? <div className='count-wrapper'>{friendRequestCount}</div> : null
-                        : totalUnreads && !show ? <div className='count-wrapper'>{totalUnreads}</div> : null
-                    }        
+                        request
+                            ? friendRequestCount ? <div className='count-wrapper'>{friendRequestCount}</div> : null
+                            : totalUnreads && !show ? <div className='count-wrapper'>{totalUnreads}</div> : null
+                    }
                 </h5>
                 <div className='sidebar-link-wrapper'>
                     <div style={{ display: show ? 'block' : 'none' }}>
@@ -86,8 +94,10 @@ function SideBarSection({ setShow, show, sectionTitle, items, type, placeholder,
                                     <SideBarNav
                                         type={type}
                                         key={type === 'channel' ? item.channelId : item.userId}
+                                        id={type === 'channel' ? item.channelId : item.userId}
                                         item={item}
                                         setTotalUnreads={setTotalUnreads}
+                                        star={star}
                                     />)
                                 : <h6 className='sidebar-link'>(No {placeholder} found)</h6>
 
