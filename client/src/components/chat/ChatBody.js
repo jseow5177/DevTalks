@@ -1,16 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { connect } from 'react-redux';
 import axios from 'axios';
 
 import SyncLoader from 'react-spinners/SyncLoader';
 
 import Messages from './Messages';
+import { scrollToFirstUnread } from '../../actions/notificationActions';
 
-function ChatBody({ auth, socketInstance, type, channelId, conversationId, messages, setMessages, typingUser, channel }) {
+function ChatBody({ auth, socketInstance, type, channelId, conversationId, messages, setMessages, typingUser, notification, scrollToFirstUnread }) {
+
+    const messageRef = useRef(null);
 
     const [isLoading, setIsLoading] = useState(true); // Show chat spinner during initial scroll of chat body
     const [newMessage, setNewMessage] = useState(null);
     const [id, setId] = useState(null);
+    const [showArrowDown, setShowArrowDown] = useState(false);
 
     useEffect(() => {
 
@@ -23,17 +27,38 @@ function ChatBody({ auth, socketInstance, type, channelId, conversationId, messa
     }, [type, channelId, conversationId]);
 
     // Listen for new messages
+    const [shouldScroll, setShouldScroll] = useState(false);
+    const [liveUnread, setLiveUnread] = useState(0);
+
     useEffect(() => {
 
-        if (socketInstance.socket) {
-            const messageListener = socketInstance.socket.on('message', messageData => {
+        const messageListener = messageData => {
+            if (messageData.id === id) {
+                
                 setNewMessage(messageData);
-            });
 
-            return () => socketInstance.socket.removeListener('message', messageListener);
+                // If the message is sent by the user, automatically scroll to bottom
+                if (messageData.message.from.userId === auth.user.id) {
+                    setShouldScroll(true);
+                // If the message is sent by other user, do not scroll to bottom.
+                // Instead, show the little red symbol
+                } else {
+                    setShouldScroll(false);
+                    setLiveUnread(liveUnread => liveUnread + 1);
+                }
+
+            }
+
         }
 
-    }, [socketInstance]);
+        if (socketInstance.socket) {
+
+            socketInstance.socket.on('message', messageListener);
+
+            return () => socketInstance.socket.off('message', messageListener);
+        }
+
+    }, [socketInstance, id, auth.user]);
 
     // Update readBy
     useEffect(() => {
@@ -62,7 +87,10 @@ function ChatBody({ auth, socketInstance, type, channelId, conversationId, messa
     // Update messages when there is new message
     useEffect(() => {
 
-        if (newMessage && newMessage.id === id) {
+        if (newMessage) {
+
+            scrollToFirstUnread(null);
+
             setMessages(messages => {
 
                 // Get the messages sent at the latest date
@@ -85,29 +113,70 @@ function ChatBody({ auth, socketInstance, type, channelId, conversationId, messa
             setNewMessage(null);
         }
 
-    }, [newMessage, setMessages, id]);
+    }, [newMessage, setMessages, id, scrollToFirstUnread]);
 
 
     // Auto scroll to bottom
-    useEffect(() => {
-
+    const scrollToBottom = () => {
         const div = document.querySelector('#dummy-div');
+        div.scrollIntoView();
+        setLiveUnread(0);
+    }
+
+    // Scroll to the first unread message
+    const scrollToUnread = (messageRef) => {
+        messageRef.current.scrollIntoView();
+    }
+
+    // Scroll to unread message or scroll to bottom
+    useEffect(() => {
         const timeout = setTimeout(() => {
-            div.scrollIntoView();
             setIsLoading(false);
+            if (messageRef.current) {
+                scrollToUnread(messageRef); // Scroll to unread message
+                messageRef.current = null
+            } else if ((showArrowDown && shouldScroll) || isLoading || (!showArrowDown)) {
+                // Only scroll to bottom under these two conditions
+                // 1. Initial load
+                // 2. User sends a message when not scrolled to bottom
+                scrollToBottom();
+            }
         }, 100);
         return () => clearTimeout(timeout);
-        
-    }, [messages, newMessage]);
+    }, [messages, newMessage, notification.messageId, showArrowDown, shouldScroll, isLoading]);
+
+    // Check user's scroll position
+
+    const scrollListener = () => {
+        const messagesDiv = document.querySelector('#messages-div');
+        const currentScrollPos = messagesDiv.scrollTop;
+        const scrollHeight = messagesDiv.scrollHeight;
+        const clientHeight = messagesDiv.clientHeight;
+
+        if (scrollHeight - clientHeight === Math.round(currentScrollPos)) {
+            setShowArrowDown(false);
+        } else {
+            setShowArrowDown(true);
+        }
+    }
+
+    // Listen to scroll in messages div
+    useEffect(() => {
+        const messagesDiv = document.querySelector('#messages-div');
+        messagesDiv.addEventListener('scroll', scrollListener);
+        return () => messagesDiv.removeEventListener('scroll', scrollListener);
+    }, []);
 
     return (
         <div className='chat-body-wrapper'>
             <div className={'loading-screen ' + (isLoading ? null : 'hidden')}><SyncLoader color={"#4B0082"} loading={isLoading} /></div>
-            <div className={'messages scroll ' + (isLoading ? 'hidden' : null)} >
-                {messages.map((messages, index) => <Messages key={index} messages={messages} />)}
+            <div id='messages-div' className={'messages scroll ' + (isLoading ? 'hidden' : null)} >
+                {messages.map((messages, index) => <Messages key={index} messages={messages} messageRef={messageRef} />)}
                 <div id='dummy-div' />
             </div>
             {typingUser.id === id && typingUser.username !== '' ? <div>{typingUser.username} is typing... </div> : null}
+            {showArrowDown ? <i className='fas fa-arrow-alt-circle-down arrow-circle-down' onClick={scrollToBottom}></i> : null}
+            {liveUnread !== 0 ? <div className='live-unread'>{liveUnread}</div> : null}
         </div>
     )
 }
@@ -115,8 +184,13 @@ function ChatBody({ auth, socketInstance, type, channelId, conversationId, messa
 const mapStateToProps = state => ({
     socketInstance: state.socket,
     auth: state.auth,
-    channel: state.activeChannel
+    notification: state.notification
 });
 
+const mapDispatchToProps = dispatch => {
+    return {
+        scrollToFirstUnread: (messageId) => dispatch(scrollToFirstUnread(messageId))
+    }
+}
 
-export default connect(mapStateToProps, null)(ChatBody);
+export default connect(mapStateToProps, mapDispatchToProps)(ChatBody);
