@@ -48,6 +48,7 @@ function SideBar({ socketInstance, joinedChannels, setJoinedChannels, starredCha
                     items={starredChannels}
                     type='channel'
                     placeholder='channels'
+                    star={true}
                 />
 
                 <hr />
