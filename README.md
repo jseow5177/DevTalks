@@ -4,7 +4,7 @@ A web chat application built with the MERN (MongoDB, Express, React and Node) st
 
 ## Project Demo
 
-To be uploaded soon.
+I have uploaded a 1.5min app demo video on [YouTube](https://www.youtube.com/watch?v=CvGurchBVXU&feature=youtu.be).
 
 ## Tech Stacks
 <ul>
