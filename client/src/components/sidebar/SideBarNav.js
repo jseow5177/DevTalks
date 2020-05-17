@@ -4,26 +4,18 @@ import axios from 'axios';
 
 import { getActiveChannel, removeActiveChannel } from '../../actions/channelActions';
 import { getActiveProfile, removeActiveProfile } from '../../actions/profileActions';
+import { scrollToFirstUnread } from '../../actions/notificationActions';
 
-function SideBarNav({ auth, socketInstance, type, item, channel, getActiveChannel, profile, getActiveProfile, removeActiveChannel, removeActiveProfile, setTotalUnreads }) {
-
-    // Check if SideBarNav is pointing at a channel or user profile
-    const [id, setId] = useState('');
-
-    useEffect(() => {
-        if (type === 'channel') {
-            setId(item.channelId);
-        } else if (type === 'user') {
-            setId(item.userId);
-        }
-    }, [type, item]);
+function SideBarNav({ auth, id, socketInstance, star, type, item, channel, getActiveChannel, profile, getActiveProfile, removeActiveChannel, removeActiveProfile, setTotalUnreads, scrollToFirstUnread }) {
 
     // Get the number of unread messages
     const [unreadCount, setUnreadCount] = useState(0);
     const [unreadMessages, setUnreadMessages] = useState([]);
 
     useEffect(() => {
-        if (id) {
+        let isSubscribed = true;
+
+        if (id && isSubscribed) {
             if (type === 'channel') {
                 axios.get(`http://localhost:5000/dev-talks/channels/${id}/read-by/${auth.user.id}`).then(res => {
                     setUnreadMessages(res.data.unreadMessages);
@@ -38,6 +30,9 @@ function SideBarNav({ auth, socketInstance, type, item, channel, getActiveChanne
                 }).catch(err => console.log(err.response.data));
             }
         }
+
+        return () => isSubscribed = false;
+
     }, [id, type, auth.user.id, setTotalUnreads]);
 
     // Listen for notifications
@@ -46,12 +41,18 @@ function SideBarNav({ auth, socketInstance, type, item, channel, getActiveChanne
     useEffect(() => {
 
         if (socketInstance.socket) {
-            const notificationListener = socketInstance.socket.on('notification', data => {
-                setNotificationData(data);   
-            });    
-            return () => socketInstance.socket.removeListener('notification', notificationListener);
+
+            const notificationListener = data => {
+                setNotificationData(data);
+            }
+
+            socketInstance.socket.on('notification', notificationListener);
+
+            return () => {
+                socketInstance.socket.off('notification', notificationListener);
+            };
         }
-        
+
     }, [socketInstance.socket]);
 
     // Show notifications only when user is not at the channel
@@ -59,8 +60,9 @@ function SideBarNav({ auth, socketInstance, type, item, channel, getActiveChanne
 
         const selectedChannelId = channel.activeChannel ? `${channel.activeChannel.channelId}` : '';
         const selectedProfileId = profile.activeProfile ? `${profile.activeProfile._id}` : '';
+        let isSubscribed = true;
 
-        if (notificationData) {
+        if (notificationData && isSubscribed) {
             if (type === 'channel') {
                 if (notificationData.id === id && notificationData.id !== selectedChannelId) {
                     setUnreadMessages(unreadMessages => [...unreadMessages, notificationData.messageId]);
@@ -77,7 +79,26 @@ function SideBarNav({ auth, socketInstance, type, item, channel, getActiveChanne
             setNotificationData(null);
         }
 
+        return () => isSubscribed = false;
+
     }, [notificationData, channel, profile, id, type, setTotalUnreads]);
+
+    // Sync joinedChannels with starredChannels
+    useEffect(() => {
+
+        const syncStarAndJoinListener = data => {
+            if (data.channelId === id && data.userId === auth.user.id) {
+                setUnreadCount(0);
+                setTotalUnreads(totalUnreads => totalUnreads - data.messages.length);
+                setUnreadMessages([]);
+            }
+        }
+
+        socketInstance.socket.on('linkToStarChannel', syncStarAndJoinListener);
+
+        return () => socketInstance.socket.off('linkToStarChannel', syncStarAndJoinListener);
+
+    }, [socketInstance.socket, star, setTotalUnreads, id, auth.user]);
 
     const showActive = (event) => {
 
@@ -91,18 +112,26 @@ function SideBarNav({ auth, socketInstance, type, item, channel, getActiveChanne
             readMessages: unreadMessages
         }
 
+        // Mark the id of the first unread message
+        scrollToFirstUnread(unreadMessages);
+
         if (type === 'channel') {
+
             getActiveChannel(event.target.id);
             removeActiveProfile();
 
+            socketInstance.socket.emit('linkToStarChannel', { channelId: id, messages: unreadMessages });
+
             axios.post(`http://localhost:5000/dev-talks/channels/${id}/read-by/${auth.user.id}`, readMessagesData)
                 .then(res => {
-                    setUnreadCount(0);
-                    setTotalUnreads(totalUnreads => totalUnreads - unreadMessages.length);
-                    setUnreadMessages([]);
+                    // To sync the notification changes between join and star section
+                    socketInstance.socket.emit('linkToStarChannel', { userId: auth.user.id, channelId: id, messages: unreadMessages });
+                    // setUnreadCount(0);
+                    // setTotalUnreads(totalUnreads => totalUnreads - unreadMessages.length);
+                    // setUnreadMessages([]);
                 })
                 .catch(err => console.log(err.response.data));
-            
+
         } else if (type === 'user') {
             getActiveProfile(event.target.id);
             removeActiveChannel();
@@ -113,7 +142,7 @@ function SideBarNav({ auth, socketInstance, type, item, channel, getActiveChanne
                     setTotalUnreads(totalUnreads => totalUnreads - unreadMessages.length);
                     setUnreadMessages([]);
                 })
-                .catch(err => console.log(err.response.data));
+                .catch(err => console.log(err.response));
         }
 
     }
@@ -142,7 +171,8 @@ const mapDispatchToProps = (dispatch) => {
         getActiveChannel: (channelId) => dispatch(getActiveChannel(channelId)),
         getActiveProfile: (userId) => dispatch(getActiveProfile(userId)),
         removeActiveProfile: () => dispatch(removeActiveProfile()),
-        removeActiveChannel: () => dispatch(removeActiveChannel())
+        removeActiveChannel: () => dispatch(removeActiveChannel()),
+        scrollToFirstUnread: (messageId) => dispatch(scrollToFirstUnread(messageId))
     }
 }
 
