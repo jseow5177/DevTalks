@@ -21,7 +21,9 @@ function ChannelBody({ channel, auth, socketInstance, joinedChannels, starredCha
 
     useEffect(() => {
 
-        setSelectedChannel(channel.activeChannel);
+        if (channel.activeChannel) {
+            setSelectedChannel(channel.activeChannel);
+        }
 
     }, [channel.activeChannel]);
 
@@ -39,27 +41,30 @@ function ChannelBody({ channel, auth, socketInstance, joinedChannels, starredCha
     // Listen for changes in number of members
     useEffect(() => {
 
-        let newMemberListener;
-        let userLeftListener;
-
-        if (socketInstance.socket && selectedChannel) {
-            // Listen for users who join channel
-            newMemberListener = socketInstance.socket.on('newMember', channelId => {
-                if (selectedChannel.channelId === channelId) {
-                    setNoOfMembers(oldNoOfMembers => oldNoOfMembers + 1);
-                }
-            });
-            // Listen for users who leave channel
-            userLeftListener = socketInstance.socket.on('userLeft', channelId => {
-                if (selectedChannel.channelId === channelId) {
-                    setNoOfMembers(oldNoOfMembers => oldNoOfMembers - 1);
-                }
-            });
+        const newMemberListener = channelId => {
+            if (selectedChannel.channelId === channelId) {
+                setNoOfMembers(oldNoOfMembers => oldNoOfMembers + 1);
+            }
         }
 
-        return () => {
-            socketInstance.socket.removeListener('newMember', newMemberListener);
-            socketInstance.socket.removeListener('userLeft', userLeftListener);
+        const userLeftListener = channelId => {
+            if (selectedChannel.channelId === channelId) {
+                setNoOfMembers(oldNoOfMembers => oldNoOfMembers - 1);
+            }
+        }
+
+        if (socketInstance.socket && selectedChannel) {
+
+            // Listen for users who join channel
+            socketInstance.socket.on('newMember', newMemberListener);
+
+            // Listen for users who leave channel
+            socketInstance.socket.on('userLeft', userLeftListener);
+
+            return () => {
+                socketInstance.socket.off('newMember', newMemberListener);
+                socketInstance.socket.off('userLeft', userLeftListener);
+            }
         }
 
     }, [socketInstance.socket, selectedChannel]);
