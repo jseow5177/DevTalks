@@ -10,8 +10,7 @@ export const GET_ERRORS = 'GET_ERRORS';
 export const SET_CURRENT_USER = 'SET_CURRENT_USER';
 
 // Handle notifications
-export const HAS_NOTIFICATIONS = 'HAS_NOTIFICATIONS';
-export const REMOVE_NOTIFICATIONS = 'REMOVE_NOTIFICATIONS';
+export const FIRST_UNREAD = 'FIRST_UNREAD';
 
 // Handle view user profile
 export const VIEW_PROFILE = 'VIEW_PROFILE';
