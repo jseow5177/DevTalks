@@ -29,7 +29,7 @@ To be uploaded soon.
 ## App features
 <ol>
   <li>Users can signup, login and logout of the app.</li>
-  <li>Users can create, leave, join and star channels.</li>
+  <li>Users can search, create, leave, join and star channels.</li>
   <li>Users can send, cancel, reject and accept friend requests from other users.</li>
   <li>Users can unfriend other users.</li>
   <li>Users can send messages into channels or private messages to friends.</li>
@@ -39,4 +39,5 @@ To be uploaded soon.
 ## Room for improvements
 <ol>
   <li>Pagination / Lazy loading of messages for React optimization</li>
+  <li>Search functionality and result page</li>
 </ol>
