@@ -4,7 +4,7 @@ import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 import { getActiveChannel } from '../../actions/channelActions';
 
-import FormRow from '../auth/FormRow';
+import FormRow from '../main/FormRow';
 
 import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/Button';
@@ -31,15 +31,24 @@ function AddChannel({ showAddChannel, setShowAddChannel, setJoinedChannels, getA
 
         event.preventDefault();
 
+        const userData = {
+            userId: auth.user.id,
+            username: auth.user.username
+        }
+
+        const channelData = {
+            channelId: uuidv4(),
+            ...channelInfo,
+            messages: [],
+            owner: userData,
+            members: [userData], // The first member is the owner
+            noOfMembers: 1, // One new member
+            stars: 0 // No stars
+        }
+
         const data = {
-            userData: {
-                userId: auth.user.id,
-                username: auth.user.username
-            }, 
-            channelData: {
-                channelId: uuidv4(), 
-                ...channelInfo 
-            } 
+            userData: userData,
+            channelData: channelData
         };
 
         // ---->> Save channel to DB <<---- //
@@ -47,7 +56,7 @@ function AddChannel({ showAddChannel, setShowAddChannel, setJoinedChannels, getA
             const channels = res.data;
             setIsSuccess(true);
             setJoinedChannels(channels);
-            getActiveChannel(data.channelData.channelId); // Immediately render the newly created channel
+            getActiveChannel(channelData.channelId); // Immediately render the newly created channel
         }).catch(err => {
             console.log(err.response.data);
             setIsFailure(true);
@@ -121,8 +130,6 @@ function AddChannel({ showAddChannel, setShowAddChannel, setJoinedChannels, getA
 }
 
 const mapStateToPros = (state) => ({
-    //socket: state.socket,
-    //activeChannel: state.activeChannel
     auth: state.auth
 });
 
