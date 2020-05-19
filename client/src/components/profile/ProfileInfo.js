@@ -33,7 +33,7 @@ function ProfileInfo({ profileStatus, username, bio, unfriend }) {
                                 profileStatus === 'friend'
                                     ? (<div className='info-icons-wrapper'>
                                         <OverlayTrigger placement='top' overlay={<Tooltip>Unfriend</Tooltip>}>
-                                            <button className='unfriend-btn' onClick={unfriend}><i class="fas fa-user-slash"></i></button>
+                                            <button className='unfriend-btn' onClick={unfriend}><i className="fas fa-user-slash"></i></button>
                                         </OverlayTrigger>
                                     </div>)
                                     : null
@@ -45,7 +45,7 @@ function ProfileInfo({ profileStatus, username, bio, unfriend }) {
                     </Accordion.Toggle>
 
                         <Accordion.Collapse eventKey="0">
-                            <Card.Body>{bio}</Card.Body>
+                            <Card.Body>{bio ? bio : <span className='empty-bio'>(Empty)</span>}</Card.Body>
                         </Accordion.Collapse>
                     </Card>
                 </Accordion>
