@@ -7,9 +7,11 @@ import { startSocket } from '../../actions/socketActions';
 
 import SideBar from '../sidebar/SideBar';
 import Header from './Header';
-import ChannelBody from './ChannelBody';
+import ChannelBody from '../channel/ChannelBody';
+import ProfileBody from '../profile/ProfileBody';
+import EmptyState from './EmptyState';
 
-function HomePage({ startSocket, auth, socketInstance, channel, profile }) {
+function HomePage({ startSocket, auth, channel, profile, socketInstance }) {
 
     // Establish socket instance
     const ENDPOINT = 'localhost:5000';
@@ -42,37 +44,111 @@ function HomePage({ startSocket, auth, socketInstance, channel, profile }) {
             setJoinedChannels(userChannels);
             setStarredChannels(starredChannels);
         }).catch(err => console.log(err));
-    }, [auth.user.id, channel]);
+    }, [auth.user.id]);
 
     /********** Profile Logic *********/
 
     // Get all friend requests
     const [friendRequests, setFriendRequests] = useState([]);
-    const [friendRequestTracker, setFriendRequestTracker] = useState('');
 
-    // Listen for friend requests
     useEffect(() => {
-        if (socketInstance.socket) {
-            socketInstance.socket.on('friendRequest', userData => {
-                setFriendRequestTracker(Math.random()); // Dummy variable to trigger useEffect
-            });
-        }
-    }, [socketInstance]);
-    
-    useEffect(() => {
+
         axios.get(`http://localhost:5000/dev-talks/users/${auth.user.id}/friend-requests`).then(res => {
             setFriendRequests(res.data);
         }).catch(err => console.log(err));
-    }, [auth.user.id, friendRequestTracker]);
+
+    }, [auth.user.id]);
 
     // Get all friends
     const [friends, setFriends] = useState([]);
 
     useEffect(() => {
+
         axios.get(`http://localhost:5000/dev-talks/users/${auth.user.id}/friends/`).then(res => {
             setFriends(res.data);
         }).catch(err => console.log(err));
+
     }, [auth.user.id]);
+
+    // Get all pending friend requests
+    const [pendingRequests, setPendingRequests] = useState([]);
+
+    useEffect(() => {
+
+        axios.get(`http://localhost:5000/dev-talks/users/${auth.user.id}/pending-requests/`).then(res => {
+            setPendingRequests(res.data);
+        }).catch(err => console.log(err));
+
+    }, [auth.user.id]);
+
+    // Get all conversations
+    useEffect(() => {
+
+        axios.get(`http://localhost:5000/dev-talks/users/${auth.user.id}/conversations/`).then(res => {
+            if (socketInstance.socket) {
+                socketInstance.socket.emit('joinConversation', res.data);
+            }
+        });
+
+    }, [auth.user.id, socketInstance.socket]);
+
+    // Provide live updates on friend requests
+    useEffect(() => {
+
+        const acceptFriendListener = friendRequestData => {
+            if (friendRequestData.profileData.userId === auth.user.id) {
+                setFriends(friends => [...friends, friendRequestData.userData]);
+                setPendingRequests(pendingRequests => pendingRequests.filter(pendingRequest => pendingRequest.userId !== friendRequestData.userData.userId));
+            }
+        }
+
+        const newFriendListener = friendRequestData => {
+            if (friendRequestData.profileData.userId === auth.user.id) {
+                setFriendRequests(friendRequests => [...friendRequests, friendRequestData.userData]);
+            }
+        }
+
+        const cancelFriendListener = friendRequestData => {
+            if (friendRequestData.profileData.userId === auth.user.id) {
+                setFriendRequests(friendRequests => friendRequests.filter(friendRequest => friendRequest.userId !== friendRequestData.userData.userId));
+            }
+        }
+
+        const rejectFriendListener = friendRequestData => {
+            if (friendRequestData.profileData.userId === auth.user.id) {
+                setPendingRequests(pendingRequests => pendingRequests.filter(pendingRequest => pendingRequest.userId !== friendRequestData.userData.userId));
+            }
+        }
+
+        const unfriendListener = friendRequestData => {
+            if (friendRequestData.profileData.userId === auth.user.id) {
+                setFriends(friends => friends.filter(friend => friend.userId !== friendRequestData.userData.userId));
+            }
+        }
+
+        // Listen to any accept of friend request
+        if (socketInstance.socket) {
+
+            socketInstance.socket.on('acceptFriendRequest', acceptFriendListener);
+
+            socketInstance.socket.on('newFriendRequest', newFriendListener);
+
+            socketInstance.socket.on('cancelFriendRequest', cancelFriendListener);
+
+            socketInstance.socket.on('rejectFriendRequest', rejectFriendListener);
+
+            socketInstance.socket.on('unfriend', unfriendListener);
+
+            return () => {
+                socketInstance.socket.off('acceptFriendRequest', acceptFriendListener);
+                socketInstance.socket.off('newFriendRequest', newFriendListener);
+                socketInstance.socket.off('cancelFriendRequest', cancelFriendListener);
+                socketInstance.socket.off('rejectFriendRequest', rejectFriendListener);
+                socketInstance.socket.off('unfriend', unfriendListener);
+            }
+        }
+
+    }, [socketInstance.socket, auth.user.id]);
 
     return (
         <div className="main">
@@ -89,13 +165,32 @@ function HomePage({ startSocket, auth, socketInstance, channel, profile }) {
                 friendRequests={friendRequests}
             />
             {
-                channel.activeChannel 
-                ? <ChannelBody
-                    joinedChannels={joinedChannels}
-                    starredChannels={starredChannels}
-                  />
-                : null
-            }   
+                channel.activeChannel
+                    ? <ChannelBody
+                        joinedChannels={joinedChannels}
+                        starredChannels={starredChannels}
+                        setJoinedChannels={setJoinedChannels}
+                        setStarredChannels={setStarredChannels}
+                    />
+                    : null
+            }
+            {
+                profile.activeProfile
+                    ? <ProfileBody
+                        friends={friends}
+                        friendRequests={friendRequests}
+                        pendingRequests={pendingRequests}
+                        setFriends={setFriends}
+                        setFriendRequests={setFriendRequests}
+                        setPendingRequests={setPendingRequests}
+                    />
+                    : null
+            }
+            {
+                !channel.activeChannel && !profile.activeProfile
+                    ? <EmptyState />
+                    : null
+            }
         </div>
     )
 }
