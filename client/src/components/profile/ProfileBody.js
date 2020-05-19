@@ -9,8 +9,6 @@ import Button from 'react-bootstrap/Button';
 import ChatBody from '../chat/ChatBody';
 import ChatInput from '../chat/ChatInput';
 import ProfileInfo from './ProfileInfo';
-//import { getDate } from '../../utils/date';
-//import { getActiveChannel } from '../../actions/channelActions';
 
 import { sendFriendRequest, acceptFriendRequest, cancelFriendRequest, rejectFriendRequest, removeFriend } from '../../utils/friendRequest';
 
@@ -20,8 +18,12 @@ function ProfileBody({ auth, profile, socketInstance, friends, setFriends, frien
     const [selectedProfile, setSelectedProfile] = useState(null);
 
     useEffect(() => {
-        setSelectedProfile(profile.activeProfile);
-    }, [profile]);
+
+        if (profile.activeProfile) {
+            setSelectedProfile(profile.activeProfile);
+        }   
+        
+    }, [profile.activeProfile]);
 
     // Set friend request data
     const [friendRequestData, setFriendRequestData] = useState({});
@@ -41,25 +43,26 @@ function ProfileBody({ auth, profile, socketInstance, friends, setFriends, frien
         }
     }, [selectedProfile, auth]);
 
+    // Get the relationship of user with this profile and render the right content
+    const [profileStatus, setProfileStatus] = useState('');
+
     // Get conversation messages
     const [messages, setMessages] = useState([]);
     const [conversationId, setConversationId] = useState('');
 
     useEffect(() => {
-        if (selectedProfile) {
+        if (selectedProfile && profileStatus === 'friend') {
             axios.get(`http://localhost:5000/dev-talks/users/${auth.user.id}/conversation/${selectedProfile._id}`).then(res => {
                 if (res.data) {
                     setConversationId(res.data.conversationId);
                     setMessages(res.data.messagesByDate);
                 } else {
+                    setConversationId('');
                     setMessages([]);
                 }
-            }).catch(err => console.log(err.response.data));
+            }).catch(err => console.log(err.response));
         }
-    }, [selectedProfile, auth.user.id]);
-
-    // Get the relationship of user with this profile and render the right content
-    const [profileStatus, setProfileStatus] = useState('');
+    }, [selectedProfile, auth.user.id, profileStatus]);
 
     // Check if user is a friend of the selected profile
     useEffect(() => {
@@ -108,47 +111,85 @@ function ProfileBody({ auth, profile, socketInstance, friends, setFriends, frien
     }
 
     const unfriend = () => {
-        removeFriend(friendRequestData, socketInstance, setProfileStatus, setFriends);
+        removeFriend(friendRequestData, socketInstance, setProfileStatus, setFriends, setMessages, setConversationId);
     }
 
     useEffect(() => {
 
-        // Listen to any incoming friend requests
-        socketInstance.socket.on('newFriendRequest', friendRequestData => {
+        const newFriendListener = friendRequestData => {
             if (selectedProfile && selectedProfile._id === friendRequestData.userData.userId) {
                 setProfileStatus('friend-request');
             }
-        });
+        }
 
-        // Listen to any accept of friend request
-        socketInstance.socket.on('acceptFriendRequest', friendRequestData => {
+        const acceptFriendListener = friendRequestData => {
             if (selectedProfile && selectedProfile._id === friendRequestData.userData.userId) {
                 setProfileStatus('friend');
             }
-        });
+        }
 
-        // Listen to any cancel of friend request
-        socketInstance.socket.on('cancelFriendRequest', friendRequestData => {
+        const rejectFriendListener = friendRequestData => {
             if (selectedProfile && selectedProfile._id === friendRequestData.userData.userId) {
                 setProfileStatus('stranger');
             }
-        });
+        }
+
+        const cancelFriendListener = friendRequestData => {
+            if (selectedProfile && selectedProfile._id === friendRequestData.userData.userId) {
+                setProfileStatus('stranger');
+            }
+        }
+
+        const unfriendListener = friendRequestData => {
+            if (selectedProfile && selectedProfile._id === friendRequestData.userData.userId) {
+                setProfileStatus('stranger');
+                // To properly clean up the deleted conversation
+                setMessages([]);
+                setConversationId('');
+            }
+        }
+
+        const joinNewConversationListener = data => {
+            console.log(data);
+            const friendRequestData = data.friendRequestData;
+            const conversationId = data.conversationId;
+            if (friendRequestData.profileData.userId === auth.user.id) {
+                socketInstance.socket.emit('joinNewConversation', conversationId);
+            }
+        }
+
+        // const newConversationListener = data => {
+        //     if (friendRequestData.profileData.userId === auth.user.id) {
+        //         socketInstance.socket.emit('joinNewConversation', conversationId);
+        //     }
+        // }
+
+        // Listen to any incoming friend requests
+        socketInstance.socket.on('newFriendRequest', newFriendListener);
 
         // Listen to any reject of friend request
-        socketInstance.socket.on('rejectFriendRequest', friendRequestData => {
-            if (selectedProfile && selectedProfile._id === friendRequestData.userData.userId) {
-                setProfileStatus('stranger');
-            }
-        });
+        socketInstance.socket.on('rejectFriendRequest', rejectFriendListener);
+
+        // Listen to any cancel of friend request
+        socketInstance.socket.on('cancelFriendRequest', cancelFriendListener);
+
+        // Listen to any accept of friend request
+        socketInstance.socket.on('acceptFriendRequest', acceptFriendListener);
 
         // Listen to any unfriend
-        socketInstance.socket.on('unfriend', friendRequestData => {
-            if (selectedProfile && selectedProfile._id === friendRequestData.userData.userId) {
-                setProfileStatus('stranger');
-            }
-        });
+        socketInstance.socket.on('unfriend', unfriendListener);
 
-    }, [socketInstance, selectedProfile]);
+        socketInstance.socket.on('joinNewConversation', joinNewConversationListener);
+
+        return () => {
+            socketInstance.socket.off('newFriendRequest', newFriendListener);
+            socketInstance.socket.off('acceptFriendRequest', acceptFriendListener);
+            socketInstance.socket.off('cancelFriendRequest', cancelFriendListener);
+            socketInstance.socket.off('rejectFriendRequest', rejectFriendListener);
+            socketInstance.socket.off('unfriend', unfriendListener);
+        }
+
+    }, [socketInstance, selectedProfile, conversationId, auth, friendRequestData]);
 
     const [typingUser, setTypingUser] = useState({});
 
@@ -188,11 +229,16 @@ function ProfileBody({ auth, profile, socketInstance, friends, setFriends, frien
                 selectedProfile
                     ? <Row className="body-wrapper">
                         <Col xs={8}>
-                            <ChatBody type='user' conversationId={conversationId} messages={messages} setMessages={setMessages} typingUser={typingUser}  />
+                            <ChatBody type='user' conversationId={conversationId} messages={messages} setMessages={setMessages} typingUser={typingUser} />
                             <div>{renderContent()}</div>
                         </Col>
                         <Col xs={4}>
-                            <ProfileInfo profileStatus={profileStatus} unfriend={unfriend} username={selectedProfile.username} bio={selectedProfile.bio} />
+                            <ProfileInfo
+                                profileStatus={profileStatus}
+                                unfriend={unfriend}
+                                username={selectedProfile.username}
+                                bio={selectedProfile.bio}
+                            />
                         </Col>
                     </Row>
                     : null
