@@ -6,6 +6,10 @@ body {
     opacity: 0.8;
 }
 
+hr {
+    border-top: 1px solid rgb(192,192,192, 0.3);
+}
+
 /********** Landing page **********/
 .landing-wrapper {
     border: 1px solid #FAFAFA;
@@ -122,6 +126,18 @@ body {
     outline: none;
 }
 
+.error-message {
+    color: red;
+    font-size: 0.8rem;
+    top: 3.5rem;
+    left: 5rem;
+    position: absolute;
+}
+
+.form-row-wrapper {
+    position: relative;
+}
+
 /********** Home page **********/
 .main {
     height: 100vh;
@@ -137,28 +153,70 @@ body {
     color: #FFF;
     position: absolute;
     z-index: 2;
+    overflow-y: hidden;
+}
+
+.sidebar-wrapper:hover {
+    overflow-y: auto;
+}
+
+.sidebar-scroll::-webkit-scrollbar {
+    position: absolute;
+    width: 0.5rem;
+}
+
+.sidebar-scroll::-webkit-scrollbar-track {
+    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3); 
+    box-shadow: inset 0 0 6px rgba(0,0,0,0.5); ;
+    border-radius: 0.5rem;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb {
+    border-radius: 0.5rem;
+    -webkit-box-shadow: inset 0 0 6px #EEE; 
+    box-shadow: inset 0 0 6px #EEE; 
 }
 
 .sidebar-section {
     padding: 0 1rem;
     color: #C0C0C0;
-    margin-bottom: 2rem;
+    /* border-bottom: 0.5px solid rgb(192,192,192, 0.3); */
+    width: 15rem;
+    position: relative;
+}
+
+.sidebar-section .fa-caret-right{
+    transform: rotate(0deg);
+    transition: transform 0.1s linear;
+}
+  
+.sidebar-section .fa-caret-right.open{
+    transform: rotate(90deg);
+    transition: transform 0.1s linear;
+}
+
+.sidebar-section h5 {
+    padding: 0;
+    margin: 0;
 }
 
 .sidebar-title {
     padding-right: 1rem;
     text-align: center;
+    width: 15rem;
 }
 
 .icon {
-    padding-bottom: 0.3rem;
-    font-size: 1.8rem !important;
+    font-size: 1.4rem;
     margin-right: 0.2rem;
 }
 
 .add-icon {
     float: right;
     cursor: pointer;
+    position: absolute;
+    right: 1.5rem;
+    z-index: 1;
 }
 
 .add-icon:hover {
@@ -176,6 +234,7 @@ body {
     cursor: pointer;
     color: #C0C0C0;
     font-weight: 500;
+    margin-top: 0.6rem;
 }
 
 .sidebar-link:focus {
@@ -183,63 +242,90 @@ body {
 }
 
 .sidebar-link:hover {
+    color: #F5F5F5;
+}
+
+.sidebar-link-wrapper h6 {
+    position: relative;
+}
+
+.notification-wrapper {
+    position: absolute;
+    top: -0.25rem;
+    right: 0.3rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 50%;
+    background: #B80F0A;
+    color: white;
+}
+
+.sidebar-dropdown {
+    cursor: pointer;
+    position: relative;
+}
+
+.sidebar-dropdown:hover {
     color: #FFF;
+}
+
+.link-wrapper {
+    position: relative;
 }
 
 /********** Home page: Add Channel form **********/
-.add-channel-wrapper .modal-header {
+.modal-wrapper .modal-header {
     border-bottom: none;
 }
 
-.add-channel-wrapper .modal-title {
+.modal-wrapper .modal-title {
     color: #FFF;
-    text-shadow: 0.1rem 0.1rem #808080;
+    text-shadow: 0.07rem 0.067rem #808080;
 }
 
-.add-channel-wrapper .modal-content {
+.modal-wrapper .modal-content {
     background-color: rgb(0, 0, 0, 0);
     border: none;
 }
 
-.add-channel-wrapper .close:focus {
+.modal-wrapper .close:focus {
     outline: none;
 }
 
-.add-channel-wrapper .close {
+.modal-wrapper .close {
     color: #FFF;
 }
 
-.add-channel-wrapper .close:hover {
-    text-shadow: 0.5rem 0.5rem 0.8rem #E8E8E8;
+.modal-wrapper .close:hover {
+    text-shadow: 0.1rem 0.1rem 0.1rem #E8E8E8;
 }
 
-.add-channel-wrapper .input-group {
+.modal-wrapper .input-group {
     border-radius: 1rem;
     box-shadow: none;
     margin: 1rem auto 0 auto;
 }
 
-.add-channel-wrapper .input-group-text {
+.modal-wrapper .input-group-text {
     border-right: none;
     background-color: #FFF;
     border-radius: 1rem
 }
 
-.add-channel-wrapper .form-control {
+.modal-wrapper .form-control {
     box-shadow: none;
     border-left: none;
     border-radius: 1rem;
 }
 
-.add-channel-wrapper .form-control:focus {
+.modal-wrapper .form-control:focus {
     border-color: #CED4DA;
 }
 
-.add-channel-wrapper .modal-footer {
+.modal-wrapper .modal-footer {
     border-top: none;
 }
 
-.add-channel-wrapper .cancel-btn {
+.modal-wrapper .cancel-btn {
     margin-left: 1.5rem;
 }
 
@@ -292,6 +378,38 @@ body {
     border-color: #CED4DA;
 }
 
+.search-results-wrapper {
+    position: absolute;
+    top: 3.1rem;
+    width: 18rem;
+    left: 50%;
+    max-height: 15rem;
+    overflow-y: auto;
+    background-color: #FFF;
+    border-radius: 0.5rem;
+    border: 1px solid #ced4da;
+    box-shadow: 0.5rem 0.5rem 0.8rem #E8E8E8;
+}
+
+.search-result-wrapper {
+    padding: 0.8rem;
+    cursor: pointer;
+}
+
+.search-result-wrapper:hover {
+    background-color: #F0F0F0;
+}
+
+.header-wrapper .logout-btn {
+    background: none!important;
+    border: none;
+    padding: 0!important;
+    position: absolute;
+    top: 0.8rem;
+    right: 1rem;
+    color: #563c5c;
+}
+
 /********** Home page: Body **********/
 .body-wrapper {
     background-color: #F0F0F0;
@@ -303,22 +421,148 @@ body {
     z-index: 0;
 }
 
-/********** Home page: Body : ChatTitle **********/
-.chat-title-wrapper {
-    background-color: #FFF;
-    box-shadow: 0.5rem 0.5rem 0.8rem #E8E8E8;
-    margin: 1.5rem;
-    border-radius: 5px;
-    height: 4rem;
-}
-
 /********** Home page: Body : ChatBody **********/
 .chat-body-wrapper {
     background-color: #FFF;
     box-shadow: 0.5rem 0.5rem 0.8rem #E8E8E8;
     margin: 1.5rem 1.5rem 1rem 1.5rem;
     border-radius: 5px;
-    height: 26.5rem;
+    height: 27rem;
+    padding: 2rem;
+    position: relative;
+    border: 1px solid #ced4da;
+}
+
+.date-wrapper {
+    font-size: 0.7rem;
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+.date {
+    width: 5rem;
+    padding: 0.4rem;
+    border-radius: 0.5rem;
+    background-color: rgb(173,216,230, 0.4);
+    margin: 0 auto;
+}
+
+.arrow-circle-down {
+    font-size: 2rem;
+    position: absolute;
+    right: 0.5rem;
+    bottom: 0.3rem;
+    color: #DCDCDC;
+    cursor: pointer;
+}
+
+.live-unread {
+    position: absolute;
+    background-color: red;
+    padding: 0.1rem;
+    border-radius: 90%;
+    width: 1.8rem;
+    text-align: center;
+    right: 1.8rem;
+    bottom: -0.5rem;
+}
+
+/********** Home page: Body : Message **********/
+.messages {
+    height: 100%;
+    overflow-y: auto;
+}
+
+.message-container {
+    display: flex;
+}
+
+.message-justify-end {
+    justify-content: flex-end;
+    margin-right: 0.5rem;
+}
+
+.message-box-purple {
+    background-color: rgb(177,156,217, 0.3);
+}
+
+.message-box-grey {
+    background-color: #F0F0F0;
+}
+
+.message-box {
+    min-width: 5rem;
+    width: fit-content;
+    overflow-wrap: break-word;  
+    border-radius: 0.5rem;
+    max-width: 80%;
+    margin-bottom: 0.2rem;
+    padding: 0.5rem;
+}
+
+.message-box h6, .message-box p {
+    padding: 0;
+    margin: 0;
+}
+
+.admin-message-box {
+    width: fit-content;
+    margin: 0.5rem auto;
+    background-color: rgb(173,216,230, 0.4);
+    padding: 0.4rem;
+    border-radius: 0.5rem;
+    font-size: 0.7rem;
+}
+
+.admin-message-box p {
+    padding: 0;
+    margin: 0;
+}
+
+.time {
+    float: right;
+    font-size: 0.7rem;
+    color: 	#808080;
+}
+
+.scroll::-webkit-scrollbar {
+    width: 0.3rem;
+}
+
+.scroll::-webkit-scrollbar-track {
+    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3); 
+    box-shadow: inset 0 0 6px rgba(0,0,0,0.5); ;
+    border-radius: 0.5rem;
+}
+
+.scroll::-webkit-scrollbar-thumb {
+    border-radius: 0.5rem;
+    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.5); 
+    box-shadow: inset 0 0 6px rgba(0,0,0,0.5); 
+}
+
+.username-link {
+    cursor: pointer;
+}
+
+.username-link:hover {
+    text-decoration: underline;
+}
+
+.unread-message-container {
+    margin: 0.5rem 0;
+    background-color: rgb(245, 245, 245, 0.5);
+    padding: 0.1rem;
+}
+
+.unread-message {
+    text-align: center;
+    margin: 0.3rem auto;
+    padding: 0.2rem;
+    background-color: #FFF;
+    width: 10rem;
+    border-radius: 1rem;
+    font-size: 0.8rem;
 }
 
 /********** Home page: Body : ChatInput **********/
@@ -329,6 +573,7 @@ body {
     border-radius: 5px;
     height: 3.5rem;
     position: relative;
+    border: 1px solid #ced4da;
 }
 
 .chat-input-wrapper .input-group {
@@ -381,8 +626,7 @@ body {
 }
 
 /********** Home page: Body : ChannelInfo **********/
-.channel-info-wrapper {
-    box-shadow: 0.5rem 0.5rem 0.8rem #E8E8E8;
+.info-wrapper {
     margin: 1.5rem 1.5rem 1.5rem 0;
     border-radius: 5px;
 }
@@ -404,6 +648,56 @@ body {
     cursor: pointer;
 }
 
+.info-icons-wrapper button {
+    background: none!important;
+    border: none;
+    padding: 0!important;
+    position: absolute;
+    top: 0.8rem;
+    color: #563c5c;
+}
+
+.info-icons-wrapper .leave-btn {
+    right: 1rem;
+}
+
+.info-icons-wrapper .star-btn {
+    right: 3.8rem;
+}
+
+.block-btn-wrapper {
+    text-align: center;
+    margin: 0rem 1.5rem 1.5rem 1.5rem;
+}
+
+.btn-primary.join-channel-btn  {
+    background-color: rgb(75,0,130, 0.8);
+    border-color: rgb(75,0,130, 0.8);
+}
+
+.btn-primary:not(:disabled):not(.disabled).active, 
+.btn-primary:not(:disabled):not(.disabled):active, .show>.btn-primary.dropdown-toggle {
+    background-color: rgb(75,0,130, 0.8);
+    border-color: rgb(75,0,130, 0.8);
+}
+
+.btn-primary.join-channel-btn:focus {
+    box-shadow: 0 0 0 0.2rem rgb(153,102,204, 0.5);
+}
+
+.btn-primary:not(:disabled):not(.disabled).active:focus, 
+.btn-primary:not(:disabled):not(.disabled):active:focus, .show>.btn-primary.dropdown-toggle:focus {
+    box-shadow: 0 0 0 0.2rem rgb(153,102,204, 0.5);
+}
+
+.star {
+    font-size: 1.5rem;
+}
+
+.orange {
+    color: tomato;
+}
+
 /********** Home page: Body : EmptyState **********/
 .empty-state-wrapper {
     background-color: #FFF;
@@ -419,3 +713,154 @@ body {
     flex-direction: column;
 }
 
+/********** Home page: Body : LoadingScreen **********/
+.loading-screen {
+    position: absolute;
+    text-align: center;
+    width: 100%;
+    height: 100%;
+}
+
+.hidden {
+    visibility: hidden;
+}
+
+.loading-icon {
+    color: red !important;
+}
+
+/********** Channel List Wrapper **********/
+.channel-list-wrapper {
+    max-height: 30rem;
+    overflow-y: auto;
+}
+
+.channel-list-item-wrapper {
+    color: #000;
+    width: 100%;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background-color: #FFF;
+    box-shadow: 0.1rem 0.1rem 0.3rem #E8E8E8;
+    cursor: pointer;
+}
+
+.channel-list-item-wrapper:hover {
+    background-color: #EEEEEE;
+}
+
+.channel-list-scroll::-webkit-scrollbar {
+    width: 0.3rem;
+}
+
+.channel-list-scroll::-webkit-scrollbar-track {
+    -webkit-box-shadow: inset 0 0 6px #EEEEEE; 
+    box-shadow: inset 0 0 6px #EEEEEE; ;
+    border-radius: 0.5rem;
+}
+
+.channel-list-scroll::-webkit-scrollbar-thumb {
+    border-radius: 0.5rem;
+    -webkit-box-shadow: inset 0 0 6px #EEEEEE; 
+    box-shadow: inset 0 0 6px #EEEEEE; 
+}
+
+.channel-name {
+    font-weight: bold;
+    font-size: 1.15rem;
+}
+
+.channel-description {
+    margin: 0;
+    padding: 0;
+    overflow-wrap: break-word;
+    margin-top: 0.5rem; 
+}
+
+.channel-list-wrapper .h4.modal-title{
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.wrapper-top {
+    display: flex;
+    justify-content: space-between;
+}
+
+/********** User Info **********/
+
+.user-info-body {
+    display: flex;
+    justify-content: flex-start;        
+}
+
+.user-image-wrapper {
+    text-align: center;
+}
+
+.user-image-wrapper img.rounded-circle {
+    width: 15rem;
+}
+
+.empty-bio {
+    font-style: italic;
+    opacity: 0.8;
+}
+
+/********** Profile Body **********/
+.flex-btns {
+    display: flex;
+    justify-content: space-evenly;
+}
+
+.inline-btn-wrapper {
+    width: 50%;
+}
+
+.left {
+    margin-right: 0.25rem;
+}
+
+.right {
+    margin-left: 0.25rem;
+}
+
+/********** Profile Info **********/
+.profile-info-image{
+    display: inline-block;
+    margin-right: 1rem;
+    height: 2rem;
+    cursor: pointer;
+}
+
+.unfriend-btn {
+    right: 1rem;
+    font-size: 1.2rem;
+}
+
+.profile-info-title-wrapper {
+    display: flex;
+    justify-content: space-between;
+}
+
+.username {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.username h4 {
+    margin: 0;
+    padding:0;
+}
+
+/********** Notifications **********/
+.count-wrapper {
+    background-color: #B80F0A;
+    min-width: 1.5rem;
+    border-radius: 5px;
+    text-align: center;
+    color: #FFF;
+    display: inline-block;
+    margin-left: 1rem;
+}
