@@ -53,18 +53,24 @@ function SideBar({ socketInstance, joinedChannels, setJoinedChannels, starredCha
 
                 <hr />
 
-                <SideBarSection
-                    show={showJoinedChannelSection}
-                    setShow={setShowJoinedChannelSection}
-                    sectionTitle='Channels'
-                    items={joinedChannels}
-                    type='channel'
-                    placeholder='channels'
-                />
+                <div>
 
-                <OverlayTrigger placement='right' overlay={<Tooltip>Add Channel</Tooltip>}>
-                    <AddRoundedIcon className='icon add-icon' onClick={addChannel} />
-                </OverlayTrigger>
+                    <OverlayTrigger placement='right' overlay={<Tooltip>Add Channel</Tooltip>}>
+                        <AddRoundedIcon className='icon add-icon' onClick={addChannel} />
+                    </OverlayTrigger>
+
+                    <SideBarSection
+                        show={showJoinedChannelSection}
+                        setShow={setShowJoinedChannelSection}
+                        sectionTitle='Channels'
+                        items={joinedChannels}
+                        type='channel'
+                        placeholder='channels'
+                    />
+                        
+                </div>
+
+
 
                 <hr />
 
