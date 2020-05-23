@@ -2,11 +2,13 @@ import React from 'react'
 import { connect } from 'react-redux';
 
 import { getActiveChannel } from '../../actions/channelActions';
+import { removeActiveProfile } from '../../actions/profileActions';
 
-function ChannelListItem({ channel, getActiveChannel, setShowChannelList }) {
+function ChannelListItem({ channel, getActiveChannel, setShowChannelList, removeActiveProfile }) {
 
     const renderChannel = () => {
         getActiveChannel(channel.channelId);
+        removeActiveProfile();
         setShowChannelList(false);
     }
 
@@ -15,7 +17,7 @@ function ChannelListItem({ channel, getActiveChannel, setShowChannelList }) {
             <div className='wrapper-top'>
                 <span className='channel-name'>{channel.channelName}</span>
                 <div>
-                    <span><i class="fas fa-users"></i> {channel.noOfMembers} {channel.noOfMembers > 1 ? 'members' : 'member'} </span>
+                    <span><i className="fas fa-users"></i> {channel.noOfMembers} {channel.noOfMembers > 1 ? 'members' : 'member'} </span>
                     <span> <i className="fas fa-star orange"></i> {channel.stars} {channel.stars > 1 ? 'stars' : 'star'}</span>
                 </div>
             </div>
@@ -26,7 +28,8 @@ function ChannelListItem({ channel, getActiveChannel, setShowChannelList }) {
 
 const mapDispatchToProps = (dispatch) => {
     return {
-        getActiveChannel: (channelId) => dispatch(getActiveChannel(channelId))
+        getActiveChannel: (channelId) => dispatch(getActiveChannel(channelId)),
+        removeActiveProfile: () => dispatch(removeActiveProfile())
     }
 }
 
