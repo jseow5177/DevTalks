@@ -3,23 +3,38 @@ import React, { useState, useEffect } from 'react';
 import Modal from 'react-bootstrap/Modal';
 
 import ChannelListItem from './ChannelListItem';
+import sortChannel from '../../utils/sortChannel';
 
-function ChannelList({ groupedChannels, showChannelList, setShowChannelList, searchedChannel }) {
+function ChannelList({ groupedChannels, showChannelList, setShowChannelList, searchedChannel, uniqueChannelNames }) {
 
-    const [channelListItems, setChannelListItems] = useState([]);
+    const [primaryListItems, setPrimaryListItems] = useState([]);
+    const [secondaryListItems, setSecondaryListItems] = useState([]);
+    const [noOfResults, setNoOfResults] = useState(0);
 
     useEffect(() => {
-        const key = searchedChannel.toLowerCase();
-        console.log(key);
-        if (groupedChannels[key]) {
-            const sortedChannelArray = groupedChannels[key];
-            // Sort array by noOfMembers first
-            // If noOfMembers are equals, then sort by number of stars
-            // Sort in descending order
-            sortedChannelArray.sort((a, b) => (a.noOfMembers > b.noOfMembers) ? -1 : (a.noOfMembers === b.noOfMembers) ? ((a.stars > b.stars) ? -1 : 1) : 1);
-            setChannelListItems(sortedChannelArray);
+        if (uniqueChannelNames.length !== 0) {
+
+            uniqueChannelNames.sort((x, y) => (x === searchedChannel) ? -1 : (y === searchedChannel) ? 1 : 0);
+            let primaryKey = uniqueChannelNames[0].toLowerCase();
+            setPrimaryListItems(sortChannel(groupedChannels[primaryKey]));
+
+            let results = [];   
+            for (let i = 1; i < uniqueChannelNames.length; i++) {
+                const key = uniqueChannelNames[i].toLowerCase();
+                const sortedChannelArray = sortChannel(groupedChannels[key]);
+                results = [...results, ...sortedChannelArray]
+            }
+            setSecondaryListItems(results);
+
         }
-    }, [groupedChannels, searchedChannel, setChannelListItems]);
+
+    }, [groupedChannels, searchedChannel, uniqueChannelNames]);
+
+    // Measure the length of results
+    useEffect(() => {
+        setNoOfResults(primaryListItems.length);
+    }, [primaryListItems]);
+
 
     const closeChannelList = () => {
         setShowChannelList(false);
@@ -27,16 +42,20 @@ function ChannelList({ groupedChannels, showChannelList, setShowChannelList, sea
 
     return (
         <div>
-            <Modal show={showChannelList} onHide={closeChannelList} className="add-channel-wrapper" centered>
+            <Modal show={showChannelList} onHide={closeChannelList} className='modal-wrapper' centered>
                 <Modal.Header closeButton>
                     <Modal.Title>
-                        {channelListItems.length} {channelListItems.length > 1 ? 'results' : 'result'} found
-                        <p className='modal-title-cta'>Click for more info</p>
+                        {noOfResults} {noOfResults > 1 ? 'results' : 'result'} found
                     </Modal.Title>
                 </Modal.Header>
                 <Modal.Body className='channel-list-wrapper channel-list-scroll'>
-                    {channelListItems.length !== 0
-                        ? channelListItems.map(channel => <ChannelListItem key={channel.channelId} channel={channel} setShowChannelList={setShowChannelList} />)
+                    {primaryListItems.length !== 0
+                        ? primaryListItems.map(channel => <ChannelListItem key={channel.channelId} channel={channel} setShowChannelList={setShowChannelList} />)
+                        : null
+                    }
+                    {secondaryListItems.length !== 0 ? <Modal.Title className='other-results-text'>You might also like...</Modal.Title> : null}
+                    {secondaryListItems.length !== 0
+                        ? secondaryListItems.map(channel => <ChannelListItem key={channel.channelId} channel={channel} setShowChannelList={setShowChannelList} />)
                         : null
                     }
                 </Modal.Body>
